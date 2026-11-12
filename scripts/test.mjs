@@ -330,6 +330,19 @@ assert.deepEqual(seriesRematch.series,limit.series);
 assert.equal(Object.values(seriesRematch.series).reduce((a,b)=>a+b,0),1);
 assert.equal(seriesRematch.endedAt,undefined);
 
+const health = fixture("N01","Bacteria",["B30","B32","B36"],[]);
+health.players.Bacteria.turns = 1;
+assert.deepEqual(view(health,"Bacteria").patientHealth,{band:0,leftCenter:false});
+act(health,"Bacteria",{type:"end"});
+assert.deepEqual(view(health,"Host").patientHealth,{band:0,leftCenter:false});
+act(health,"Host",{type:"end"});
+const firstBand = view(health,"Bacteria").patientHealth;
+assert.ok(firstBand.band < 0);
+health.board.find(s=>s.id==="N01").slots.fill(null);
+assert.deepEqual(view(health,"Bacteria").patientHealth,firstBand);
+act(health,"Bacteria",{type:"end"});
+assert.deepEqual(view(health,"Host").patientHealth,{band:0,leftCenter:true});
+
 const local = newGame(random);
 local.status = "objectives";
 const firstLocal = nextPlayer(local);

@@ -217,10 +217,18 @@ function shouldEnd(s) {
   return null;
 }
 function finishTurn(s) {
+  updatePatientHealth(s);
   const reason = shouldEnd(s);
   if (reason) { scoreMatch(s, reason); return; }
   const extra = s.nextExtra && !s.extra && !goAgainSuppressed(s);
   begin(s, extra ? s.turn : opposite(s.turn), extra);
+}
+
+function updatePatientHealth(s) {
+  if (!s.players[opposite(s.turn)].turns) return;
+  const margin = Object.values(liveSitePoints(s)).reduce((sum, site) => sum + site.Host - site.Bacteria, 0);
+  const band = margin >= 0 ? Math.min(3, Math.floor(margin / 10)) : -Math.min(4, Math.floor(-margin / 10));
+  s.patientHealth = {band, leftCenter:!!(s.patientHealth?.leftCenter || band)};
 }
 
 function pump(s) {
@@ -654,7 +662,8 @@ export function view(s, f) {
     extra:s.extra, slots:s.slots, actionRules:!!s.actionRules, hostBalance:!!s.hostBalance, jointPlay:!!s.jointPlay,
     uniqueSiteBoons:!!s.uniqueSiteBoons, focusedDraw:!!s.sitePerks?.focusedDraw,
     discount:s.discount, board:s.board, log:s.log,
-    sitePoints:liveSitePoints(s), playedPoints:s.playedPoints ?? [], spentReactions:s.spentReactions ?? {},
+    sitePoints:liveSitePoints(s), patientHealth:s.patientHealth ?? {band:0, leftCenter:false},
+    playedPoints:s.playedPoints ?? [], spentReactions:s.spentReactions ?? {},
     startedAt:s.startedAt ?? null, endedAt:s.endedAt ?? null,
     series:s.series ?? (s.scores ? countSeriesResult(null,s.scores) : {Bacteria:0, Host:0, ties:0}),
     hand:player.hand, recentHand:(player.recentHand ?? []).filter(id => player.hand.includes(id)),

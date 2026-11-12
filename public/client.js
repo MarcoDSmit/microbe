@@ -380,15 +380,25 @@ function elapsedTime() {
   return minutes + ":" + String(seconds % 60).padStart(2,"0");
 }
 
-function renderHealth() {
-  if (game.status !== "playing" || !game.sitePoints) return "";
+function renderPublicPoints() {
+  if (!game.sitePoints) return "";
   const sites = Object.values(game.sitePoints);
   const host = sites.reduce((sum,site) => sum + site.Host,0);
   const bacteria = sites.reduce((sum,site) => sum + site.Bacteria,0);
-  const percent = host + bacteria ? Math.round(100 * host / (host + bacteria)) : 50;
-  return '<div class="panel health-meter"><label for="patient-health">Patient health · ' + percent + '%</label>' +
-    '<progress id="patient-health" value="' + percent + '" max="100"></progress>' +
-    '<small>Host share of public board points</small></div>';
+  return '<div class="panel public-points"><strong>Board points</strong>' +
+    badge("Bacteria " + bacteria + " VP","Bacteria") + badge("Host " + host + " VP","Host") +
+    '<small>Secret objectives score separately.</small></div>';
+}
+
+function renderHealth() {
+  if (game.status !== "playing") return "";
+  const {band, leftCenter} = game.patientHealth ?? {band:0, leftCenter:false};
+  const labels = ["Draw up my last will and testament","Arrow to the knee","Feels poorly","Slight sniffles",
+    leftCenter ? "Recovering well" : "Perfect health","Back on your feet","Superhuman","Near invincible"];
+  const label = labels[band + 4];
+  const bands = labels.map((_, index) => '<span class="health-band' + (index === band + 4 ? ' active' : '') + '"></span>').reverse();
+  return '<aside class="panel health-meter" aria-label="Patient health"><h2>Patient health</h2>' +
+    '<div class="health-bands" aria-hidden="true">' + bands.join("") + '</div><p role="status">' + safe(label) + '</p></aside>';
 }
 function render() {
   if (!data) return;
@@ -454,11 +464,12 @@ function render() {
   const openedKey = app.querySelector(".match-key")?.open;
   const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
-  app.innerHTML = '<article class="game">' + summary + bar + renderHealth() + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
+  app.innerHTML = '<article class="game">' + summary + bar + renderPublicPoints() + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
     invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
     [["inspector","Inspector"],["objectives","Objectives"],["discards","Discards"],["log","Match log"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
-    '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop">' + renderBoard() +
+    '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-and-health">' +
+    renderHealth() + '<div class="board-content">' + renderBoard() + '</div></div>' +
     renderHand() + '</section>' + (sidePanel ? '<aside class="aside">' +
       (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : sidePanel === "discards" ? discards : log) +
       '</aside>' : '') + '</div></article>';
