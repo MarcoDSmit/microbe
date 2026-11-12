@@ -227,7 +227,7 @@ function finishTurn(s) {
 function updatePatientHealth(s) {
   if (!s.players[opposite(s.turn)].turns) return;
   const margin = Object.values(liveSitePoints(s)).reduce((sum, site) => sum + site.Host - site.Bacteria, 0);
-  const band = margin >= 0 ? Math.min(3, Math.floor(margin / 10)) : -Math.min(4, Math.floor(-margin / 10));
+  const band = Math.sign(margin) * Math.min(4, Math.floor(Math.abs(margin) / 10)) || 0;
   s.patientHealth = {band, leftCenter:!!(s.patientHealth?.leftCenter || band)};
 }
 

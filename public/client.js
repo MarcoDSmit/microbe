@@ -394,7 +394,8 @@ function renderHealth() {
   if (game.status !== "playing") return "";
   const {band, leftCenter} = game.patientHealth ?? {band:0, leftCenter:false};
   const labels = ["Draw up my last will and testament","Arrow to the knee","Feels poorly","Slight sniffles",
-    leftCenter ? "Recovering well" : "Perfect health","Back on your feet","Superhuman","Near invincible"];
+    leftCenter ? "Recovering well" : "Perfect health","Back on your feet","Superhuman","Near invincible",
+    "Drinks spirulina and never ages"];
   const label = labels[band + 4];
   const bands = labels.map((_, index) => '<span class="health-band' + (index === band + 4 ? ' active' : '') + '"></span>').reverse();
   return '<aside class="panel health-meter" aria-label="Patient health"><h2>Patient health</h2>' +
