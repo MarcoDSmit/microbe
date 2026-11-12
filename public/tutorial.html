@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microbe Wars · Practice turn</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="preferences.js"></script>
+  <script type="module" src="tutorial.js"></script>
+  <style>
+    main { max-width: 44rem; margin: 2rem auto; padding: 0 1rem 2rem; display: grid; gap: 1rem; }
+    .lesson { display: grid; gap: .7rem; }
+    .lesson button { justify-self: start; text-align: left; }
+    .lesson [role=status]:empty { display: none; }
+    .practice-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Practice a turn</h1>
+    <p>Try six decisions on a practice board. Your match stays in its own tab.</p>
+    <nav class="practice-links" aria-label="Rules links"><a href="glossary.html">Play glossary</a><a href="/">Game lobby</a></nav>
+    <section class="panel lesson" aria-labelledby="lesson-title">
+      <p class="eyebrow" id="lesson-progress"></p>
+      <h2 id="lesson-title" tabindex="-1">Practice</h2>
+      <p id="lesson-prompt"></p>
+      <div class="choices" id="lesson-choices"></div>
+      <p id="lesson-feedback" role="status"></p>
+      <button class="primary" id="lesson-next" type="button" hidden>Continue</button>
+    </section>
+    <noscript>The <a href="glossary.html">glossary</a> works without the interactive practice.</noscript>
+  </main>
+</body>
+</html>

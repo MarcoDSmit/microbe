@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Microbe Wars · Play glossary</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="preferences.js"></script>
+  <style>
+    main { max-width: 52rem; margin: 2rem auto; padding: 0 1rem 2rem; }
+    h1 { font-size: clamp(2rem, 5vw, 3rem); margin-bottom: .6rem; }
+    section { margin-top: 1rem; }
+    dl { margin: .6rem 0 0; }
+    dt { font-weight: 750; margin-top: .65rem; }
+    dd { margin: 0; }
+    nav { display: flex; gap: .4rem 1rem; flex-wrap: wrap; margin-top: .8rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Microbe Wars play glossary</h1>
+    <p class="meta">Quick reference for the current playtest.</p>
+    <nav aria-label="Glossary sections">
+      <a href="#turn">Turn and hand</a>
+      <a href="#tucks">Tucks and matches</a>
+      <a href="#abilities">Abilities and reactions</a>
+      <a href="#sites">Sites and scoring</a>
+    </nav>
+    <section class="panel" id="turn">
+      <h2>Turn and hand</h2>
+      <dl>
+        <dt>Action</dt>
+        <dd>You get three per turn. For each one, play a card, draw one from your deck, or take the top card of your discard pile. You can repeat an action or end early.</dd>
+        <dt>Cost / free play</dt>
+        <dd>Cost is how many other cards you discard from your hand to play a card. A card that costs 0 still spends an action when played normally.</dd>
+        <dt>Bonus play</dt>
+        <dd>Play one extra card without spending a normal action. Pay its usual cost unless the effect gives a discount. Follow any card or site restriction in the prompt.</dd>
+        <dt>Draw / recover / take top discard</dt>
+        <dd>Draw from the top of your deck. Recover means choose a card from your discard pile, unless the effect specifies a position. Take top discard returns only the top card.</dd>
+        <dt>Filter / draft</dt>
+        <dd>Filter means look at the stated number of cards from your deck, keep the allowed number, and discard the rest. Draft means choose from the secret objectives offered by the effect.</dd>
+        <dt>Hand limit</dt>
+        <dd>Start with six cards. At the end of your turn, discard down to 12 if needed.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="tucks">
+      <h2>Tucks and matches</h2>
+      <dl>
+        <dt>Tuck / visible</dt>
+        <dd>Put the target beneath the card that tucked it. This opens its space. A visible card occupies a space on the board. Visible cards count toward control and can use their abilities.</dd>
+        <dt>Local tuck / local sweep</dt>
+        <dd>Target cards at the same site. A sweep tucks all eligible targets there. If an ability says “up to,” you can choose fewer targets or decline.</dd>
+        <dt>Full-site tuck play</dt>
+        <dd>An on-play tuck card with an eligible local target can use a temporary seventh space at a full site. You must choose a local attack. The played card moves into the space opened by the tuck or by Refuge.</dd>
+        <dt>Optimal / Active / distant tuck</dt>
+        <dd>Both Optimal and Active matches can qualify for a local antibiotic tuck. An antibiotic with an on-play attack can choose one distant Optimal target instead of its local attack. Recurring attacks stay local, and card-specific limits apply.</dd>
+        <dt>Resistance match</dt>
+        <dd>A match marked for a reaction. For B22 and B23, an antibiotic played at their site that shows this match cannot tuck them. They draw one after the attack, once per turn. B23 may tuck the antibiotic instead if it tucked nothing. B23 also has a separate once-per-turn draw after Host plays any antibiotic, if B23 is still visible.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="abilities">
+      <h2>Abilities and reactions</h2>
+      <dl>
+        <dt>On play / start of turn / while visible</dt>
+        <dd>On-play effects resolve when a card is played. Start-of-turn effects resolve at the start of your turn. A while-visible effect lasts while its card occupies a board space.</dd>
+        <dt>Reaction</dt>
+        <dd>An effect that responds to a trigger without using an action. In Pass &amp; Play, hand the device over when the game asks the other player to react.</dd>
+        <dt>Refuge</dt>
+        <dd>When a card with Refuge would be tucked, you may move that card to an open space at another site and cancel the tuck. Moving triggers no on-play abilities. Each copy can use Refuge once between the starts of your turns.</dd>
+        <dt>Ambush</dt>
+        <dd>When played, you may tuck one Host card at this site that has nothing tucked beneath it.</dd>
+        <dt>Go Again</dt>
+        <dd>Take one extra turn after this one. Multiple triggers grant one extra turn total. Go Again cannot trigger during that extra turn.</dd>
+        <dt>Suppress</dt>
+        <dd>While visible, H34 blocks bonus plays granted by Bacteria played at its site. H36 blocks Bacteria from using Go Again anywhere.</dd>
+      </dl>
+    </section>
+    <section class="panel" id="sites">
+      <h2>Sites and scoring</h2>
+      <dl>
+        <dt>Site / majority / full control</dt>
+        <dd>Four sites are drawn for each match, with six shared spaces each. Majority means you have more visible cards there than your opponent. Full control means all six spaces are yours.</dd>
+        <dt>Boon</dt>
+        <dd>Each site has its own perk, printed on the board. It unlocks when you start your turn with at least three of your cards there and more than your opponent. A 3–3 tie grants neither side a boon.</dd>
+        <dt>VP / base / synergy / tuck points</dt>
+        <dd>VP means victory points. Visible cards contribute their printed base points, applicable card and site synergies, and their printed tuck value for each card directly beneath them.</dd>
+        <dt>Territory / secret objectives</dt>
+        <dd>At scoring, a majority earns 3 VP and full control earns 5 VP for that site. Secret objectives are private scoring goals. Keep two of your opening three.</dd>
+        <dt>End of the match</dt>
+        <dd>Score at the end of a turn if either draw deck is empty, all 24 spaces are filled, or one faction fills all six spaces at two sites. The higher VP total wins.</dd>
+      </dl>
+    </section>
+  </main>
+</body>
+</html>

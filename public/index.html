@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A two-player Microbe Wars v3 playtest with invite-only matches.">
+  <meta name="theme-color" content="#f5f2e9">
+  <title>Microbe Wars Online</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/preferences.js"></script>
+  <script type="module" src="/client.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">✳</span><span>Microbe Wars</span></a>
+    <nav class="utility" aria-label="Game help and settings">
+      <a href="/rules.html" target="_blank" rel="noopener">Rules</a>
+      <a href="/glossary.html" target="_blank" rel="noopener">Glossary</a>
+      <a href="/tutorial.html" target="_blank" rel="noopener">Tutorial</a>
+      <details class="settings">
+        <summary>Settings</summary>
+        <div class="panel">
+          <label><input id="night-mode" type="checkbox" role="switch"> Night mode</label>
+          <label for="text-size">Text size <output id="text-value" for="text-size">100%</output></label>
+          <input id="text-size" type="range" min="90" max="150" step="5" value="100">
+        </div>
+      </details>
+    </nav>
+  </header>
+  <main id="app"><p class="loading">Opening the field lab…</p></main>
+  <noscript>Enable JavaScript to enter a match.</noscript>
+</body>
+</html>

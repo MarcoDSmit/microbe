@@ -1,0 +1,15 @@
+{
+  "name": "microbe-wars-online",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@netlify/blobs": "^11.0.0"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:netlify": "node scripts/build.mjs --netlify",
+    "start": "node server.mjs",
+    "test": "node scripts/test.mjs",
+    "validate": "node scripts/validate-artifact.mjs"
+  }
+}
