@@ -68,9 +68,14 @@ const rival = await (await hit(room, "GET", undefined, seats[current === "Host" 
 assert.equal(rival.board.find((n) => n.id === site).slots[0].id, card);
 assert.equal((await hit(room + "?since=" + rival.revision, "GET", undefined, owner)).status, 204);
 assert.ok(Number.isFinite(rival.startedAt));
-assert.equal(rival.playedPoints[0].id,card);
 const row = db.get(lobby.code);
 const ended = JSON.parse(row.state);
+while (ended.pending) {
+  const pending = ended.pending;
+  if (pending.kind === "bonus") act(ended,pending.f,{type:"skipBonus"});
+  else act(ended,pending.f,{type:"choose",selected:pending.choices.slice(0,pending.min)});
+}
+assert.equal(view(ended,current).playedPoints[0].id,card);
 ended.players[ended.turn].deck = [];
 act(ended,ended.turn,{type:"end"});
 db.set(lobby.code,{...row,state:JSON.stringify(ended)});
