@@ -56,7 +56,7 @@ export async function api(request, store) {
     const [, code, command] = match;
     const room = await store.get(code);
     if (!room || Date.now() - room.updated >= TTL) return problem("Room not found or expired.", 404);
-    const state = JSON.parse(room.state);
+    let state = JSON.parse(room.state);
     if (command === "join" && request.method === "POST") {
       const { invite } = await input(request);
       if (typeof invite !== "string" || !tokenPattern.test(invite) || await hash(invite) !== room.invite_hash) {
@@ -81,7 +81,7 @@ export async function api(request, store) {
     if (command === "action" && request.method === "POST") {
       const { revision, action } = await input(request);
       if (revision !== room.revision) return problem("The board changed. Review it and retry.", 409);
-      act(state, faction, action);
+      state = act(state, faction, action);
       if (!await store.update(code, room.revision, JSON.stringify(state))) return problem("The board changed. Review it and retry.", 409);
       return json(publicState(room, state, faction, room.revision + 1));
     }

@@ -69,7 +69,7 @@ export function newGame(random = secureRandom) {
   const first = sides[Math.floor(random() * sides.length)];
   return {
     status: "waiting", first, turn: first, turnNumber: 0, players,
-    board,
+    board, series:{Bacteria:0, Host:0, ties:0}, playedPoints:[], spentReactions:{},
     queue: [], pending: null, log: ["The two decks are shuffled."],
     actionRules: true, hostBalance: true, uniqueSiteBoons: true, slots: 0, jointPlay: false, discount: 0, nextExtra: false, extra: false, exhausted: false, scores: null,
   };
@@ -100,6 +100,7 @@ function take(s, captor, target) {
 }
 
 function begin(s, f, extra = false) {
+  s.startedAt ??= Date.now();
   s.turn = f; s.turnNumber++; s.players[f].turns++;
   s.extra = extra; s.nextExtra = false; s.exhausted = false;
   s.slots = s.actionRules ? 3 : 1; s.discount = 0; s.jointPlay = false;
@@ -181,15 +182,12 @@ function resolveCapture(s, job) {
   take(s, job.captor, job.id);
 }
 
-function hostReactions(s, id) {
+function hostReactions(s, id, resistanceTargets) {
   if (cards[id].type !== "Antibiotic") return;
   for (const b of visible(s, "Bacteria")) {
-    if (cardTypeId(b.id) === "B23") {
-      const obj = location(s, b.id).piece;
-      if (obj.reaction !== s.turnNumber) {
-        obj.reaction = s.turnNumber;
-        draw(s, "Bacteria", 1);
-      }
+    if (cardTypeId(b.id) === "B23" && !s.spentReactions?.[b.id] && !resistanceTargets.includes(b.id)) {
+      (s.spentReactions ??= {})[b.id] = true;
+      draw(s, "Bacteria", 1);
     }
   }
 }
@@ -199,8 +197,16 @@ const goAgainSuppressed = (s) => visible(s, "Host").some((o) => cardTypeId(o.id)
 function scoreMatch(s, reason) {
   s.status = "finished"; s.pending = null; s.queue = [];
   s.scores = { Bacteria: score(s, "Bacteria"), Host: score(s, "Host") };
+  s.endedAt = Date.now();
+  s.series = countSeriesResult(s.series, s.scores);
   s.reason = reason;
   log(s, "Match ended: " + reason + ".");
+}
+function countSeriesResult(series, scores) {
+  const result = {Bacteria:0, Host:0, ties:0, ...series};
+  const margin = scores.Bacteria.total - scores.Host.total;
+  result[margin === 0 ? "ties" : margin > 0 ? "Bacteria" : "Host"]++;
+  return result;
 }
 function shouldEnd(s) {
   if (s.board.every((site) => space(site) < 0)) return "all 24 spaces filled";
@@ -308,23 +314,34 @@ function pump(s) {
       case "afterHost": {
         const antibiotic = location(s, job.id);
         const type = cardTypeId(job.id);
+        let responses = [];
         if (antibiotic && cards[job.id].type === "Antibiotic") {
-          const responses = siteCards(antibiotic.site, "Bacteria").filter((o) =>
-            matrix[type]?.[cardTypeId(o.id)] === "TRIGGER" && o.resistance !== s.turnNumber);
+          responses = siteCards(antibiotic.site, "Bacteria").filter((o) =>
+            matrix[type]?.[cardTypeId(o.id)] === "TRIGGER" && !s.spentReactions?.[o.id]);
           task(s, ...responses.map((o) => ({ kind: "resistance", id: o.id, antibiotic: job.id })));
         }
-        hostReactions(s, job.id);
+        hostReactions(s, job.id, responses.map(o => o.id));
         break;
       }
       case "resistance": {
         const b = location(s, job.id), h = location(s, job.antibiotic);
-        if (!b) break;
-        b.piece.resistance = s.turnNumber;
+        if (!b || s.spentReactions?.[job.id]) break;
+        (s.spentReactions ??= {})[job.id] = true;
         log(s, cards[job.id].name + " resisted the treatment.");
         if (cardTypeId(b.piece.id) === "B23" && h && !h.piece.tucked.length && h.site === b.site) {
           s.pending = { ...job, f: "Bacteria", choices: ["draw", "tuck"], min: 1, max: 1,
             prompt: "Resistance triggered. Draw a card or tuck the antibiotic that caught nothing." };
         } else draw(s, "Bacteria", 1);
+        break;
+      }
+      case "recordPlay": {
+        const entry = location(s, job.id);
+        const own = visible(s, job.f);
+        const card = own.find(o => o.id === job.id);
+        const points = card ? cards[job.id].base + cardSynergy(s, job.f, card, own) +
+          cards[job.id].tuck * card.tucked.length : 0;
+        (s.playedPoints ??= []).push({id:job.id, faction:job.f, site:entry?.site.id ?? job.site,
+          turn:s.turnNumber, points});
         break;
       }
       case "finish": finishTurn(s); break;
@@ -393,6 +410,7 @@ function performPlay(s, f, action) {
   if (attack) jobs.push({ kind:"attack", id, ...attack, fullSite, optional:!fullSite && attack.optional });
   if (fullSite) jobs.push({ kind:"settleTuckPlay", site:siteId });
   if (f === "Host") jobs.push({ kind: "afterHost", id });
+  jobs.push({kind:"recordPlay", id, f, site:siteId});
   if (bonuses[type] && !(f === "Bacteria" && siteCards(site, "Host").some((o) => cardTypeId(o.id) === "H34"))) {
     const b = bonuses[type];
     jobs.push({ kind: "bonus", f, ...b, site: b.local ? siteId : null, discount: b.discount ?? 0 });
@@ -407,6 +425,11 @@ function choices(p, selected) {
 
 export function act(s, f, action) {
   requireRule(action && typeof action === "object" && !Array.isArray(action), "Choose an action.");
+  if (action.type === "rematch") {
+    requireRule(s.status === "finished", "Finish the match before starting a rematch.");
+    return { ...newGame(), creatorFaction:s.creatorFaction, status:"objectives",
+      series:s.series ?? countSeriesResult(null, s.scores) };
+  }
   requireRule(s.status === "playing" || s.status === "objectives", "The match is not ready for a move.");
   const player = s.players[f];
   if (s.status === "objectives") {
@@ -599,6 +622,17 @@ function score(s, f) {
   return { base, synergy, tuck, territory, objective, total: base + synergy + tuck + territory + objective };
 }
 
+function liveSitePoints(s) {
+  const owners = Object.fromEntries(sides.map(f => [f, visible(s, f)]));
+  return Object.fromEntries(s.board.map(site => [site.id, Object.fromEntries(sides.map(f => {
+    const own = owners[f];
+    const atSite = own.filter(o => o.site === site);
+    const cardPoints = atSite.reduce((sum,o) => sum + cards[o.id].base + cardSynergy(s,f,o,own) +
+      cards[o.id].tuck * o.tucked.length, 0);
+    return [f, cardPoints + (majority(site) === f ? (atSite.length === 6 ? 5 : 3) : 0)];
+  }))]));
+}
+
 export function view(s, f) {
   const player = s.players[f], rival = s.players[opposite(f)];
   const pending = s.pending?.f === f ? s.pending : s.pending ? { f: s.pending.f, prompt: "Waiting for the other player’s choice." } : null;
@@ -620,6 +654,9 @@ export function view(s, f) {
     extra:s.extra, slots:s.slots, actionRules:!!s.actionRules, hostBalance:!!s.hostBalance, jointPlay:!!s.jointPlay,
     uniqueSiteBoons:!!s.uniqueSiteBoons, focusedDraw:!!s.sitePerks?.focusedDraw,
     discount:s.discount, board:s.board, log:s.log,
+    sitePoints:liveSitePoints(s), playedPoints:s.playedPoints ?? [], spentReactions:s.spentReactions ?? {},
+    startedAt:s.startedAt ?? null, endedAt:s.endedAt ?? null,
+    series:s.series ?? (s.scores ? countSeriesResult(null,s.scores) : {Bacteria:0, Host:0, ties:0}),
     hand:player.hand, recentHand:(player.recentHand ?? []).filter(id => player.hand.includes(id)),
     deckCount:player.deck.length, discard:player.discard, goals:player.goals,
     objectivePoints:Object.fromEntries(player.goals.map(id => [id, goalScore(s, f, id)])),

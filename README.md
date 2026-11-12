@@ -43,7 +43,7 @@ In new matches, Neutrophil Recruitment (H02) and Macrophage Antigen Presentation
 
 At a full site, an on-play tuck card can use the temporary seventh space if it has an eligible local target. You must choose a local attack. The played card moves into the space opened by the tuck or by the target moving with Refuge.
 
-**Resistance** triggers when an antibiotic played at the same site has a Resistance match with B22 or B23. The bacterium resists the tuck and draws after the attack. B23 can tuck an antibiotic that caught nothing instead of drawing from that reaction. Its separate draw for a Host antibiotic play has its own once-per-turn limit.
+**Resistance** applies when an antibiotic played at the same site has a Resistance match with B22 or B23. Each copy gets one antibiotic reaction per game. On a Resistance match it draws after the attack, and B23 can tuck an antibiotic that caught nothing instead. B23 can also spend its reaction to draw after another Host antibiotic play if B23 is still visible.
 
 **Suppress** is persistent while the antibiotic remains visible. H34 stops bonus plays granted by Bacteria played at its site. H36 stops Bacteria from using Go Again anywhere on the board.
 

@@ -9,7 +9,8 @@ export function nextPlayer(state) {
 export function passPlayView(state, revealed, view) {
   const faction = nextPlayer(state);
   if (state.status === "finished") {
-    return { status: "finished", scores: state.scores, reason: state.reason };
+    return { status: "finished", scores: state.scores, reason: state.reason,
+      series: view(state, "Host").series, startedAt: state.startedAt, endedAt: state.endedAt };
   }
   return revealed === faction && faction ? view(state, faction) : null;
 }

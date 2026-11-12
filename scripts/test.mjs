@@ -67,6 +67,21 @@ assert.equal((await hit(room + "/action", "POST", request, seats[current])).stat
 const rival = await (await hit(room, "GET", undefined, seats[current === "Host" ? "Bacteria" : "Host"])).json();
 assert.equal(rival.board.find((n) => n.id === site).slots[0].id, card);
 assert.equal((await hit(room + "?since=" + rival.revision, "GET", undefined, owner)).status, 204);
+assert.ok(Number.isFinite(rival.startedAt));
+assert.equal(rival.playedPoints[0].id,card);
+const row = db.get(lobby.code);
+const ended = JSON.parse(row.state);
+ended.players[ended.turn].deck = [];
+act(ended,ended.turn,{type:"end"});
+db.set(lobby.code,{...row,state:JSON.stringify(ended)});
+const restart = {revision:row.revision,action:{type:"rematch"}};
+const restarts = await Promise.all([hit(room+"/action","POST",restart,owner),hit(room+"/action","POST",restart,guest)]);
+assert.deepEqual(restarts.map(r=>r.status).sort(),[200,409]);
+const restarted = await (await hit(room,"GET",undefined,guest)).json();
+assert.equal(restarted.status,"objectives");
+assert.equal(restarted.faction,"Bacteria");
+assert.deepEqual(restarted.series,ended.series);
+assert.equal(restarted.startedAt,null);
 
 function fixture(siteId, turn, board, hand) {
   const s = newGame(random);
@@ -211,6 +226,14 @@ assert.equal(resistance.pending.kind,"resistance");
 assert.equal(view(resistance,"Host").pending.kind,undefined);
 act(resistance,"Bacteria",{type:"choose",selected:["tuck"]});
 assert.equal(resistance.board.find((s) => s.id==="N01").slots[0].tucked[0].id,"H22");
+assert.equal(view(resistance,"Host").spentReactions.B23,true);
+const reactionDeck = resistance.players.Bacteria.deck.length;
+resistance.players.Host.hand = ["H23","H07","H08","H10","H11"];
+act(resistance,"Host",{type:"end"});
+act(resistance,"Bacteria",{type:"end"});
+act(resistance,"Host",{type:"play",card:"H23",site:"N01",slot:1,pay:["H07","H08","H10","H11"]});
+assert.equal(resistance.pending,null);
+assert.equal(resistance.players.Bacteria.deck.length,reactionDeck);
 
 for (const refresh of [false,true]) {
   const match = fixture("N01","Host",["B03"],["H01","H01:2","H10","H11"]);
@@ -295,7 +318,12 @@ limit.players.Host.deck = [];
 act(limit,"Host",{type:"end"});
 assert.equal(limit.status,"finished");
 assert.ok(Number.isInteger(limit.scores.Host.total));
-assert.deepEqual(Object.keys(passPlayView(limit,null,view)),["status","scores","reason"]);
+assert.deepEqual(Object.keys(passPlayView(limit,null,view)),["status","scores","reason","series","startedAt","endedAt"]);
+const seriesRematch = act(limit,"Host",{type:"rematch"});
+assert.equal(seriesRematch.status,"objectives");
+assert.deepEqual(seriesRematch.series,limit.series);
+assert.equal(Object.values(seriesRematch.series).reduce((a,b)=>a+b,0),1);
+assert.equal(seriesRematch.endedAt,undefined);
 
 const local = newGame(random);
 local.status = "objectives";

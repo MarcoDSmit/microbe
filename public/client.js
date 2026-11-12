@@ -41,6 +41,9 @@ const authorization = () => ({ Authorization: "Bearer " + seat.token });
 const room = () => "/api/rooms/" + seat.code;
 function setGame(next) {
   if (!next || (game && game.code === next.code && next.revision < game.revision)) return;
+  if (game?.status === "finished" && next.status === "objectives") {
+    inspect = null; sidePanel = null;
+  }
   game = next;
   dropSpace = null;
   selected.clear();
@@ -118,8 +121,7 @@ function move(action) {
   error = "";
   try {
     const updated = structuredClone(localMatch);
-    act(updated, revealed, action);
-    localMatch = updated;
+    localMatch = act(updated, revealed, action);
     saveLocal();
     syncLocal();
     revealEndTurn();
@@ -185,7 +187,15 @@ function cardDetail() {
   const card = cardOf(instance);
   if (!card) return '<div class="panel detail"><h2>Card inspector</h2><p class="meta">Select a card on the board or in your hand to read its ability.</p></div>';
   const site = game.board.find((s) => s.slots.some((o) => o?.id === instance));
-  const onBoard = site?.slots.find((o) => o?.id === instance);
+  function findPiece(pieces) {
+    for (const piece of pieces) {
+      if (!piece) continue;
+      if (piece.id === instance) return piece;
+      const nested = findPiece(piece.tucked);
+      if (nested) return nested;
+    }
+  }
+  const onBoard = findPiece(game.board.flatMap(s => s.slots));
   const play = cardOf(picked);
   let match = "";
   if (play?.rail && card.faction === "Bacteria" && site) {
@@ -208,8 +218,14 @@ function cardDetail() {
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
       '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
     (card.synergy ? '<p><b>Synergy</b> · ' + safe(card.synergy) + '</p>' : "") +
-    (onBoard?.tucked.length ? '<p><b>Tucked beneath</b> · ' + safe(onBoard.tucked.map((o) => cardOf(o.id).name).join(", ")) + '</p>' : "") +
+    (game.spentReactions?.[instance] ? '<p><b>Antibiotic reaction spent</b></p>' : '') +
+    (onBoard?.tucked.length ? '<h3>Tucked beneath</h3>' + inspectList(onBoard.tucked.map(o => o.id)) : "") +
     match + '<small class="card-id">' + safe(card.id + (game.actionRules ? copyLabel(instance) : "")) + '</small></div>';
+}
+
+function inspectList(ids) {
+  return ids.length ? '<div class="choices">' + ids.map(id => button(cardOf(id).name,"inspect",
+    'data-id="' + safe(id) + '"')).join("") + '</div>' : '<p class="meta">Empty</p>';
 }
 
 function renderBoard() {
@@ -230,6 +246,7 @@ function renderBoard() {
           '" title="' + safe(c.name) + '">' + strip(c,true) + '<span class="slot-name">' + safe(cardTitle(c)) +
           '</span><span class="slot-note">' + safe(cardTags(c,true).join(" · ")) + '</span>' +
           (piece.tucked.length ? '<span class="slot-note">' + piece.tucked.length + ' tucked</span>' : "") +
+          (game.spentReactions?.[piece.id] ? '<span class="slot-note">Reaction spent</span>' : '') +
           '<span class="card-id">' + safe(c.id) + '</span></button>';
       }
       const legal = ready && available.sites.includes(site.id);
@@ -245,8 +262,10 @@ function renderBoard() {
       (tuckReady ? "" : 'aria-disabled="true" tabindex="-1"') + '>Tuck play</button>' : "";
     const control = b === h ? (b ? "Contested" : "Unoccupied") :
       (b > h ? "Bacteria" : "Host") + (Math.max(b,h) === 6 ? " full control" : " majority");
+    const points = game.sitePoints?.[site.id];
+    const scoreLine = points ? '<p class="site-points">Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</p>' : '';
     return '<section class="node"><div class="node-title"><h3>' + safe(info.name) + '</h3><span class="slot-note">' +
-      control + ' · ' + occupied.length + '/6</span></div><div class="grid">' + cells + '</div>' + extraSpace + '<details><summary>Site boon &amp; scoring</summary><small>' +
+      control + ' · ' + occupied.length + '/6</span></div>' + scoreLine + '<div class="grid">' + cells + '</div>' + extraSpace + '<details><summary>Site boon &amp; scoring</summary><small>' +
       safe(game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power) + '</small><small>Majority +3 VP · Full control +5 VP</small><small>' +
       safe(info.bacteriaSynergy) + '<br>' + safe(info.hostSynergy) + '</small></details></section>';
   }).join("") + '</div>';
@@ -349,7 +368,27 @@ function renderScore() {
       const s=game.scores[f];
       return '<div><b>' + f + ' ' + s.total + '</b><p class="meta">Base ' + s.base + ' · synergy ' + s.synergy +
         ' · tucked ' + s.tuck + ' · territory ' + s.territory + ' · objectives ' + s.objective + '</p></div>';
-    }).join("") + '</div></section>';
+    }).join("") + '</div>' + (game.series ? '<p class="series-score"><b>Series wins</b> · Bacteria ' + game.series.Bacteria +
+      ' · Host ' + game.series.Host + ' · Ties ' + game.series.ties + '</p>' : '') +
+    (game.startedAt ? '<p>Match time · ' + elapsedTime() + '</p>' : '') +
+    button("Play again","rematch",busy ? "disabled" : "", "primary") + '</section>';
+}
+function elapsedTime() {
+  if (!game?.startedAt) return "";
+  const seconds = Math.max(0,Math.floor(((game.endedAt ?? Date.now()) - game.startedAt) / 1000));
+  const minutes = Math.floor(seconds / 60);
+  return minutes + ":" + String(seconds % 60).padStart(2,"0");
+}
+
+function renderHealth() {
+  if (game.status !== "playing" || !game.sitePoints) return "";
+  const sites = Object.values(game.sitePoints);
+  const host = sites.reduce((sum,site) => sum + site.Host,0);
+  const bacteria = sites.reduce((sum,site) => sum + site.Bacteria,0);
+  const percent = host + bacteria ? Math.round(100 * host / (host + bacteria)) : 50;
+  return '<div class="panel health-meter"><label for="patient-health">Patient health · ' + percent + '%</label>' +
+    '<progress id="patient-health" value="' + percent + '" max="100"></progress>' +
+    '<small>Host share of public board points</small></div>';
 }
 function render() {
   if (!data) return;
@@ -387,6 +426,7 @@ function render() {
   const bar = '<div class="statusbar"><div><strong>' + safe(status) + '</strong>' +
     (game.turnNumber ? ' <span class="meta">· Turn ' + game.turnNumber + ' · ' + game.slots +
       (game.actionRules ? " actions left" : " normal plays left") + (game.jointPlay ? " · Site bonus play available" : "") + '</span>' : "") +
+    (game.startedAt ? ' <span class="meta" aria-label="Match time">· <time id="match-timer">' + elapsedTime() + '</time></span>' : '') +
     (game.actionRules && topDiscard ? '<div class="meta">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
     '</div><div class="status-actions">' + actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
     (localMatch ? button("Hide hand","hideLocal","","plain") : "") +
@@ -401,7 +441,10 @@ function render() {
         '</h3><p><b>' + safe(objectiveValue(goal)) + '</b></p><p>' + safe(goal.text) + '</p><p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
+  const played = (game.playedPoints ?? []).slice().reverse();
   const log = '<div class="panel"><h2>Match log</h2><ol class="log">' +
+    (played.length ? played.map(entry => '<li>Turn ' + entry.turn + ' · ' + safe(cardOf(entry.id).name) +
+      ' · ' + entry.points + ' VP at play</li>').join("") : '') + '</ol><ol class="log">' +
     game.log.slice().reverse().map((item) => '<li>' + safe(item) + '</li>').join("") + '</ol></div>';
   const previousHand = app.querySelector(".hand");
   const handScroll = previousHand?.dataset.recent === (game.recentHand ?? []).join(",") ? previousHand.scrollLeft : 0;
@@ -409,13 +452,16 @@ function render() {
   const focusedAction = focused?.action, focusedId = focused?.id;
   const focusedPayment = focused?.paymentCard;
   const openedKey = app.querySelector(".match-key")?.open;
-  app.innerHTML = '<article class="game">' + summary + bar + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
+  const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
+    '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
+  app.innerHTML = '<article class="game">' + summary + bar + renderHealth() + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
     invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
-    [["inspector","Inspector"],["objectives","Objectives"],["log","Match log"]].map(([id,label]) =>
+    [["inspector","Inspector"],["objectives","Objectives"],["discards","Discards"],["log","Match log"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
     '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop">' + renderBoard() +
     renderHand() + '</section>' + (sidePanel ? '<aside class="aside">' +
-      (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : log) + '</aside>' : '') + '</div></article>';
+      (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : sidePanel === "discards" ? discards : log) +
+      '</aside>' : '') + '</div></article>';
   app.querySelector(".hand").scrollLeft = handScroll;
   app.querySelector(".match-key").open = !!openedKey;
   if (focusedAction && focusedId) {
@@ -514,6 +560,13 @@ app.addEventListener("click", async (event) => {
   }
   if (node.disabled || node.getAttribute("aria-disabled") === "true") return;
   const {action,id,site,slot} = node.dataset;
+  if (action === "rematch") {
+    if (!localMatch) return move({type:"rematch"});
+    localMatch = act(localMatch, null, {type:"rematch"});
+    saveLocal();
+    syncLocal();
+    return;
+  }
   if (action === "startLocal") {
     localMatch = newGame();
     localMatch.status = "objectives";
@@ -584,7 +637,9 @@ try {
   }
   render();
   setInterval(() => {
-    if (seat && !busy && game?.status !== "finished") update();
+    if (seat && !busy) update();
+    const timer = document.querySelector("#match-timer");
+    if (timer) timer.textContent = elapsedTime();
   }, 1200);
 } catch (e) {
   app.innerHTML = '<p class="loading error" role="alert">' + safe(e.message) + '</p>';
