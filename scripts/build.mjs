@@ -14,6 +14,8 @@ const [data, game, api, entry] = await Promise.all(
   ["worker/data.json", "worker/game.js", "worker/api.js", "worker/site.js"].map((p) => readFile(p, "utf8")));
 const flat = (source) => source.replace(/^import .+;\r?\n/gm, "").replace(/^export (?=(const|function|class|async))/gm, "");
 files["/local-rules.js"] = "const data = " + data + ";\n" + game.replace(/^import .+;\r?\n/gm, "");
+const { cards: libraryCards, sites: librarySites, goals: libraryGoals } = JSON.parse(data);
+files["/library-data.js"] = "export default " + JSON.stringify({ cards: libraryCards, sites: librarySites, goals: libraryGoals }) + ";\n";
 if (process.argv.includes("--netlify")) {
   for (const [path, content] of Object.entries(files)) {
     const destination = join("dist/netlify-public", path.slice(1));

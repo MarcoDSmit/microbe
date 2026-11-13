@@ -1,0 +1,10 @@
+.library { max-width: 75rem; margin: 2rem auto; padding: 0 1rem 2rem; display: grid; gap: 1rem; }
+.library-controls, #atlas-form { display: flex; flex-wrap: wrap; gap: .75rem; align-items: end; }
+.library label { display: grid; gap: .25rem; }
+.library input, .library select { padding: .5rem; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: .4rem; max-width: 100%; }
+.library details { border-bottom: 1px solid var(--line); padding-bottom: .75rem; }
+.library details > * + * { margin-top: .5rem; }
+.library-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: .75rem; }
+.library-card { display: flex; flex-direction: column; gap: .55rem; overflow-wrap: anywhere; }
+.library-card h2 { font-size: 1.22rem; }
+.library-card a { margin-top: auto; padding-top: .35rem; }
