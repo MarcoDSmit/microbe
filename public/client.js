@@ -1,11 +1,13 @@
 import { act, canReachOptimal, newGame, printedCost, view } from "/local-rules.js";
 import { nextPlayer, passPlayView } from "/pass-play.js";
+import { chooseBotMove } from "/solo-bot.js";
 
 const app = document.querySelector("#app");
 const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => (
   {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const storeKey = "microbe-wars.seat";
 const passKey = "microbe-wars.pass-play";
+const soloKey = "microbe-wars.solo";
 const saved = (() => { try { return JSON.parse(sessionStorage.getItem(storeKey)); } catch { return null; } })();
 const fragment = new URLSearchParams(location.hash.slice(1));
 const incoming = { code: fragment.get("room"), invite: fragment.get("invite") };
@@ -14,6 +16,7 @@ let picked = null, payment = new Set(), selected = new Set(), inspect = null;
 let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
 let localMatch = null, revealed = null;
+let soloFaction = null, botTimer;
 const other = (f) => f === "Host" ? "Bacteria" : "Host";
 const cardOf = (id) => id && data.cards[id.split(":")[0]];
 const copyLabel = (id) => id.endsWith(":2") ? " · Copy 2" : " · Copy 1";
@@ -101,18 +104,42 @@ async function transact(path, body, isMove = false) {
 }
 function saveLocal() {
   try {
-    sessionStorage.setItem(passKey, JSON.stringify(localMatch));
+    sessionStorage.setItem(soloFaction ? soloKey : passKey,
+      JSON.stringify(soloFaction ? {match:localMatch, faction:soloFaction} : localMatch));
   } catch {
     notice = "This browser could not save the match for refresh.";
   }
 }
 
 function syncLocal() {
-  if (revealed !== nextPlayer(localMatch)) revealed = null;
-  game = passPlayView(localMatch, revealed, view);
+  clearTimeout(botTimer);
+  if (soloFaction) {
+    revealed = soloFaction;
+    game = view(localMatch, soloFaction);
+    if (nextPlayer(localMatch) === other(soloFaction)) botTimer = setTimeout(playBot, 450);
+  } else {
+    if (revealed !== nextPlayer(localMatch)) revealed = null;
+    game = passPlayView(localMatch, revealed, view);
+  }
   picked = null; inspect = null; payment.clear(); selected.clear(); paymentMode = false;
   dropSpace = null; sidePanel = null;
   render();
+}
+
+function playBot() {
+  if (!localMatch || !soloFaction) return;
+  const faction = other(soloFaction);
+  if (nextPlayer(localMatch) !== faction) return;
+  try {
+    const updated = structuredClone(localMatch);
+    localMatch = act(updated, faction, chooseBotMove(view(updated, faction), data));
+    saveLocal();
+    syncLocal();
+    revealEndTurn();
+  } catch (e) {
+    error = "The bot could not finish its move. " + e.message;
+    render();
+  }
 }
 
 function move(action) {
@@ -147,6 +174,7 @@ function lobby() {
       '<h2>Create a match</h2><p class="meta">Each player gets a private six-card hand.</p>' +
       '<label for="faction">Your faction</label><select id="faction"><option>Bacteria</option><option>Host</option></select>' +
       button("Create private room","create",busy ? "disabled" : "","primary") +
+      button("Play solo vs bot","startSolo",busy ? "disabled" : "","primary") +
       '<hr><h2>Same device</h2><p class="meta">Take turns passing the screen. Hands and objectives are hidden at each handoff.</p>' +
       button("Pass & Play","startLocal",busy ? "disabled" : "","primary")) + err() + '</div></section>';
 }
@@ -414,7 +442,8 @@ function render() {
     return;
   }
   if (localMatch && game?.status === "finished") {
-    app.innerHTML = '<article class="game"><span class="eyebrow">Pass &amp; Play</span>' + renderScore() +
+    app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? "Solo vs bot" : "Pass &amp; Play") +
+      '</span>' + renderScore() +
       '<div>' + button("Back to lobby","leave") + '</div></article>';
     return;
   }
@@ -430,7 +459,8 @@ function render() {
     button("Take top discard","takeDiscard",canSpend && topDiscard ? 'title="' + safe(topDiscard.name) + '"' : "disabled") : "";
   const status = waiting ? "Waiting for your opponent" : game.status === "objectives" ? "Secret objective setup" :
     game.status === "finished" ? "Match complete" : game.turn === game.faction ? "Your turn" : other(game.faction) + "’s turn";
-  const summary = '<div class="summary"><div><span class="eyebrow">' + (localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
+  const summary = '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? "Solo vs bot" :
+    localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
     '</span><h1>Infection board</h1></div><div class="badges">' + badge("You · " + game.faction,game.faction) +
     badge("Draw deck " + game.deckCount) + badge("Opponent hand " + game.opponentHandCount,other(game.faction)) +
     '</div></div>';
@@ -440,7 +470,7 @@ function render() {
     (game.startedAt ? ' <span class="meta" aria-label="Match time">· <time id="match-timer">' + elapsedTime() + '</time></span>' : '') +
     (game.actionRules && topDiscard ? '<div class="meta">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
     '</div><div class="status-actions">' + actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
-    (localMatch ? button("Hide hand","hideLocal","","plain") : "") +
+    (localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
     button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") + '</div></div>';
   const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
@@ -579,12 +609,13 @@ app.addEventListener("click", async (event) => {
     syncLocal();
     return;
   }
-  if (action === "startLocal") {
+  if (action === "startLocal" || action === "startSolo") {
+    soloFaction = action === "startSolo" ? document.querySelector("#faction").value : null;
     localMatch = newGame();
     localMatch.status = "objectives";
     revealed = null; error = ""; notice = "";
     seat = null;
-    history.replaceState(null, "", "#pass-play");
+    history.replaceState(null, "", soloFaction ? "#solo" : "#pass-play");
     saveLocal(); syncLocal(); return;
   }
   if (action === "revealLocal" || action === "hideLocal") {
@@ -603,8 +634,10 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "leave") {
     if ((localMatch?.status ?? game.status) !== "finished" &&
-        !confirm(localMatch ? "End this Pass & Play match?" : "Leave this match in this tab? You will lose this tab’s saved seat.")) return;
-    sessionStorage.removeItem(localMatch ? passKey : storeKey);
+        !confirm(localMatch ? "End this match?" : "Leave this match in this tab? You will lose this tab’s saved seat.")) return;
+    sessionStorage.removeItem(soloFaction ? soloKey : localMatch ? passKey : storeKey);
+    clearTimeout(botTimer);
+    soloFaction = null;
     localMatch = null; revealed = null;
     seat = null; game = null; inspect = null; picked = null; payment.clear(); selected.clear();
     error = ""; notice = ""; incoming.code = null; incoming.invite = null;
@@ -641,7 +674,16 @@ app.addEventListener("click", async (event) => {
 
 try {
   data = await request("/api/cards");
-  if (location.hash === "#pass-play") {
+  if (location.hash === "#solo") {
+    try {
+      const savedSolo = JSON.parse(sessionStorage.getItem(soloKey));
+      if (savedSolo?.match && ["Host","Bacteria"].includes(savedSolo.faction)) {
+        localMatch = savedSolo.match;
+        soloFaction = savedSolo.faction;
+        syncLocal();
+      }
+    } catch {}
+  } else if (location.hash === "#pass-play") {
     try { localMatch = JSON.parse(sessionStorage.getItem(passKey)); } catch { localMatch = null; }
     if (localMatch) syncLocal();
   } else if (saved && !incoming.invite && (!incoming.code || incoming.code === saved.code)) {
