@@ -188,7 +188,9 @@ const tagNames = { hospital:"Hospital-associated", uropathogen:"Uropathogen", sk
 const objectiveTags = new Set(["uropathogen","respiratory","hospital","staphylococcus"]);
 function cardTags(card, compact = false) {
   const tags = card.tags.filter(tag => !compact || objectiveTags.has(tag));
-  const classification = card.faction === "Bacteria" ? ["Gram-" + card.gram.toLowerCase()] :
+  const gram = card.gram === "Variable" ? "Gram-variable" :
+    ["Positive","Negative"].includes(card.gram) ? "Gram-" + card.gram.toLowerCase() : "";
+  const classification = card.faction === "Bacteria" ? [gram].filter(Boolean) :
     [card.type, ...(card.type === "Immune" ? [card.identity] : [])];
   if (card.type === "Antibiotic" && card.route !== "N/A") classification.push(card.route);
   return [...new Set([...classification, ...tags.map(tag => tagNames[tag] ||

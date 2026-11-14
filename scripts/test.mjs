@@ -6,6 +6,8 @@ import { nextPlayer, passPlayView } from "../public/pass-play.js";
 
 const piece = (id) => ({id,tucked:[],guardUsed:false,refugeUsed:0});
 const random = () => 0.19;
+const deckSize = faction => Object.values(data.cards).filter(card => card.faction === faction)
+  .reduce((sum,card) => sum + (card.copies ?? 2),0);
 const db = new Map();
 const store = {
   async get(code) { return db.get(code); },
@@ -27,7 +29,18 @@ assert.equal(created.status, 201);
 const { token: owner, invite, game: lobby } = await created.json();
 const room = "/api/rooms/" + lobby.code;
 assert.equal(lobby.hand.length, 6);
-assert.equal(lobby.deckCount, 66);
+assert.equal(lobby.deckCount, deckSize("Host") - 6);
+const expanded = newGame(random);
+const bacteriaCards = [...expanded.players.Bacteria.deck,...expanded.players.Bacteria.hand];
+assert.equal(bacteriaCards.length,93);
+assert.ok(bacteriaCards.includes("B46") && !bacteriaCards.includes("B46:2"));
+assert.ok(!bacteriaCards.includes("B67"));
+for (const card of Object.values(data.cards).filter(card => card.copies != null)) {
+  for (const drug of Object.values(data.cards).filter(card => card.rail)) {
+    const match = card.optimal.includes(drug.mark) ? "OPTIMAL" : card.active.includes(drug.mark) ? "ACTIVE" : "NONE";
+    assert.equal(data.matrix[drug.id][card.id],match);
+  }
+}
 assert.equal(lobby.board.length, 4);
 assert.ok(lobby.board.every((node) => node.slots.length === 6));
 assert.equal((await hit(room)).status, 403);
@@ -476,10 +489,10 @@ for (let i = 0; i < 20; i++) {
   const collect = (o) => { physical.push(o.id); o.tucked.forEach(collect); };
   for (const node of match.board) node.slots.filter(Boolean).forEach(collect);
   for (const player of Object.values(match.players)) physical.push(...player.deck,...player.hand,...player.discard);
-  assert.equal(physical.length, 144);
-  assert.equal(new Set(physical).size, 144);
+  assert.equal(physical.length, deckSize("Host") + deckSize("Bacteria"));
+  assert.equal(new Set(physical).size, physical.length);
 }
 
 console.log("Verified two private seats, invite race, illegal payment, stale writes, resistance, Refuge, Suppress and final scoring.");
-console.log("Verified three actions, top-discard recovery, separate copy abilities and 144 cards across 20 complete games.");
+console.log("Verified three actions, top-discard recovery and card conservation across 20 complete games.");
 console.log("Verified Pass & Play privacy for objective selection, turn changes, reactions and final scoring.");

@@ -3,7 +3,7 @@ import { libraryStorageKey, readPlayedCards } from "./library-session.js";
 import retiredCards from "./retired-cards.js";
 
 const entries = [
-  ...Object.values(data.cards).sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}))
+  ...Object.values(data.cards).filter(card => card.copies !== 0).sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}))
     .map((card,index) => ({ ...card, group: card.faction, number:index+1 })),
   ...data.sites.map(site => ({ ...site, group: "Site" })),
   ...Object.values(data.goals).map(goal => ({ ...goal, group: "Objective" })),
@@ -13,6 +13,7 @@ const atlasAddress = document.querySelector("#atlas-address");
 const search = document.querySelector("#search");
 const group = document.querySelector("#group");
 const cards = document.querySelector("#cards");
+const reserve = Object.values(data.cards).filter(card => card.copies === 0).map(card => ({...card, group:card.faction}));
 const retiredList = document.querySelector("#retired-cards");
 const status = document.querySelector("#atlas-status");
 const inspector = document.querySelector("#card-inspector");
@@ -76,6 +77,9 @@ function render() {
     cluster.append(...variants.map(card => cardFace(card, true)));
     return cluster;
   }));
+  const reserves = reserve.filter(card => (!group.value || group.value === card.group) && matchesSearch(card));
+  document.querySelector("#reserve-section").hidden = !reserves.length;
+  document.querySelector("#reserve-cards").replaceChildren(...reserves.map(card => cardFace(card, true)));
   const retired = retiredCards.filter(card =>
     (!group.value || group.value === card.group) && matchesSearch(card));
   retiredList.replaceChildren(...retired.map(card => cardFace(card, true)));
@@ -103,9 +107,10 @@ function cardFace(card, expandable) {
       });
     } else title.textContent = card.name;
     appendText(article, "p", card.identity !== card.name ? card.identity : "");
-    if (card.number || card.replacementId) {
+    if (card.cost != null) {
       if (card.number) appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
       appendText(article, "small", `Cost ${card.cost} · ${card.base} base VP · ${card.tuck} VP per tuck`);
+      if (card.copies === 0) appendText(article, "p", "Reserve · Outside the draw deck");
       appendText(article, "p", [card.gram && card.gram !== "N/A" && "Gram-" + card.gram.toLowerCase(),
         card.route !== "N/A" && card.route, ...card.tags.map(tag => tag.replaceAll("_", " "))].filter(Boolean).join(" · "));
       appendText(article, "small", card.timing?.replaceAll("_", " ").toLowerCase());

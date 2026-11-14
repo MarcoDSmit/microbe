@@ -1,6 +1,6 @@
 # Microbe Wars Online
 
-A browser alpha for two human players using the 72-card v3 playtest deck. The lobby is open to anyone with the site link. Matches are invite-only.
+A browser alpha for solo play or two human players. The lobby is open to anyone with the site link. Online matches are invite-only.
 
 ## Play
 
@@ -16,7 +16,7 @@ Use **Tutorial** to practice the core decisions, **Glossary** to look up a term,
 4. Choose **Play** on a hand card. For a paid play, mark the required number of **other** hand cards as payment. Choose a highlighted open space to commit the play. The server validates the price, location and turn.
 5. Follow prompts for targets, bonus plays, Refuge and other reactions. End your turn when done. If over 12 cards, choose which to discard.
 
-New matches start with six cards from a shuffled 72-card faction deck, with two copies of each of its 36 cards. Each turn gives three actions. Spend each action to play a card at its usual cost, draw one card from your deck, or take the face-up top card of your discard. Repeat any action you can afford, in any order. There is no automatic turn draw. You may end early and discard down to 12 if needed. The game scores at the end of the turn when either draw deck is empty, or when a board end condition is met. Existing matches retain their original rules.
+New matches start with six cards. Bacteria draws from 93 cards, including one copy of each of the 21 expansion designs. Host draws from 72 cards. Each turn gives three actions. Spend each action to play a card at its usual cost, draw one card from your deck, or take the face-up top card of your discard. Repeat any action you can afford, in any order. There is no automatic turn draw. You may end early and discard down to 12 if needed. The game scores at the end of the turn when either draw deck is empty, or when a board end condition is met. Saved matches keep their original decks.
 
 Each new match draws four different sites from a pool of twelve, with six shared spaces apiece. To unlock a site's boon, start your turn with at least three of your visible cards there and more than your opponent. A 3–3 tie grants neither player a boon. The board lists each site's boon and faction synergies.
 

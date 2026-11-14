@@ -60,7 +60,7 @@ export function newGame(random = secureRandom) {
   const activeSites = new Set(board.map(site => site.id));
   for (const f of sides) {
     const deck = shuffle(Object.keys(catalog).filter((id) => catalog[id].faction === f)
-      .flatMap((id) => [id, id + ":2"]), random);
+      .flatMap((id) => [id, id + ":2"].slice(0, catalog[id].copies ?? 2)), random);
     const goalDeck = shuffle(Object.keys(goals).filter((id) => goals[id].faction === f &&
       (goals[id].requiresSites ?? []).every(site => activeSites.has(site))), random);
     players[f] = { deck, hand: deck.splice(0, 6), discard: [], goalDeck, goals: [],
