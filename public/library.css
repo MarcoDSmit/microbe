@@ -7,6 +7,8 @@
 .library-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1.25rem; }
 .library-card { display: flex; flex-direction: column; gap: .55rem; overflow-wrap: anywhere; }
 .library-card h2 { font-size: 1.22rem; }
+.library-variants { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,19rem),1fr)); gap: 1.25rem; grid-column: 1 / -1; }
+#retired-section { display: grid; gap: .75rem; margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--line); }
 .library-card a { margin-top: auto; padding-top: .35rem; }
 .library-cards .library-card { cursor: zoom-in; }
 .library-card.unplayed { filter: saturate(.25); background: color-mix(in srgb, var(--card) 90%, var(--line)); }

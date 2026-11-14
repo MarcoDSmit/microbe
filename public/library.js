@@ -1,5 +1,6 @@
 import data from "./library-data.js";
 import { libraryStorageKey, readPlayedCards } from "./library-session.js";
+import retiredCards from "./retired-cards.js";
 
 const entries = [
   ...Object.values(data.cards).sort((a,b) => a.id.localeCompare(b.id, undefined, {numeric:true}))
@@ -12,6 +13,7 @@ const atlasAddress = document.querySelector("#atlas-address");
 const search = document.querySelector("#search");
 const group = document.querySelector("#group");
 const cards = document.querySelector("#cards");
+const retiredList = document.querySelector("#retired-cards");
 const status = document.querySelector("#atlas-status");
 const inspector = document.querySelector("#card-inspector");
 const inspectedCard = document.querySelector("#inspected-card");
@@ -49,16 +51,35 @@ function render() {
   document.querySelector("#atlas").href = atlas.href;
   const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const available = entries.filter(card => group.value ? card.group === group.value : card.number);
-  const matches = available.filter(card => {
+  const matchesSearch = card => {
     const searchable = [card.name, card.id, card.identity, card.type, card.faction,
       card.abilityName, card.ability, card.synergy, card.tags?.join(" "), card.power,
       card.bacteriaSynergy, card.hostSynergy, card.text].join(" ").toLowerCase();
     return words.every(word => searchable.includes(word) || word === String(card.number));
-  });
+  };
+  const matches = available.filter(matchesSearch);
   document.querySelector("#count").textContent = matches.length
     ? `${matches.length} of ${available.length} cards`
     : "No cards match your search.";
-  cards.replaceChildren(...matches.map(card => cardFace(card, true)));
+  const groups = new Map();
+  for (const card of matches) {
+    const key = card.identity ? card.group + ":" + card.identity : card.id;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(card);
+  }
+  cards.replaceChildren(...[...groups.values()].map(variants => {
+    if (variants.length === 1) return cardFace(variants[0], true);
+    const cluster = document.createElement("div");
+    cluster.className = "library-variants";
+    cluster.setAttribute("role", "group");
+    cluster.setAttribute("aria-label", variants[0].identity + " variants");
+    cluster.append(...variants.map(card => cardFace(card, true)));
+    return cluster;
+  }));
+  const retired = retiredCards.filter(card =>
+    (!group.value || group.value === card.group) && matchesSearch(card));
+  retiredList.replaceChildren(...retired.map(card => cardFace(card, true)));
+  document.querySelector("#retired-empty").hidden = retired.length > 0;
 }
 
 function cardFace(card, expandable) {
@@ -82,8 +103,8 @@ function cardFace(card, expandable) {
       });
     } else title.textContent = card.name;
     appendText(article, "p", card.identity !== card.name ? card.identity : "");
-    if (card.number) {
-      appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
+    if (card.number || card.replacementId) {
+      if (card.number) appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
       appendText(article, "small", `Cost ${card.cost} · ${card.base} base VP · ${card.tuck} VP per tuck`);
       appendText(article, "p", [card.gram && card.gram !== "N/A" && "Gram-" + card.gram.toLowerCase(),
         card.route !== "N/A" && card.route, ...card.tags.map(tag => tag.replaceAll("_", " "))].filter(Boolean).join(" · "));
@@ -106,6 +127,10 @@ function cardFace(card, expandable) {
     if (card.vp != null) appendText(article, "small", `${card.vp} VP${card.per ? " per qualifying item" : ""}`);
     appendText(article, "strong", card.abilityName);
     for (const line of [card.ability, card.synergy, card.power, card.bacteriaSynergy, card.hostSynergy, card.text]) appendText(article, "p", line);
+    if (card.replacementId) {
+      appendText(article, "p", "Replaced by " + card.replacementId + " · " + card.replacement);
+      appendText(article, "p", card.reason);
+    }
     if (card.group === "Bacteria") {
       const url = new URL(atlas);
       const related = { "Legionella spp.": "Legionella", "Enterobacter cloacae complex": "Enterobacter cloacae" }[card.identity];
