@@ -1,8 +1,12 @@
 import { act, canReachOptimal, newGame, printedCost, view } from "/local-rules.js";
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
+import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
 
 const app = document.querySelector("#app");
+const libraryId = librarySession();
+const libraryKey = libraryStorageKey(libraryId);
+if (libraryId) document.querySelector("#library-link").hash = libraryId;
 const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => (
   {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const storeKey = "microbe-wars.seat";
@@ -431,6 +435,7 @@ function renderHealth() {
 }
 function render() {
   if (!data) return;
+  recordPlayedCards(libraryKey, localMatch?.playedPoints ?? game?.playedPoints);
   if (localMatch && !game) {
     const faction = nextPlayer(localMatch);
     const prompt = localMatch.status === "objectives" ? "Choose your secret objectives when you’re ready." :

@@ -4,7 +4,18 @@
 .library input, .library select { padding: .5rem; background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: .4rem; max-width: 100%; }
 .library details { border-bottom: 1px solid var(--line); padding-bottom: .75rem; }
 .library details > * + * { margin-top: .5rem; }
-.library-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: .75rem; }
+.library-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); gap: 1.25rem; }
 .library-card { display: flex; flex-direction: column; gap: .55rem; overflow-wrap: anywhere; }
 .library-card h2 { font-size: 1.22rem; }
 .library-card a { margin-top: auto; padding-top: .35rem; }
+.library-cards .library-card { cursor: zoom-in; }
+.library-card.unplayed { filter: saturate(.25); background: color-mix(in srgb, var(--card) 90%, var(--line)); }
+.library-played { width: fit-content; padding: .15rem .4rem; border-radius: .3rem; background: var(--green-wash); font-weight: 700; font-size: .8rem; }
+.unplayed .library-played { background: transparent; color: var(--muted); }
+.library-inspect { font: inherit; color: inherit; border: 0; padding: 0; text-align: left; background: transparent; cursor: zoom-in; }
+.library-spectrum { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem; font-size: .85rem; }
+.library-spectrum img { width: 1.2rem; height: 1.2rem; background: #f3f6f1; border-radius: .15rem; }
+#card-inspector { width: min(38rem, calc(100% - 2rem)); max-height: 88dvh; padding: .8rem; border: 1px solid var(--line); border-radius: .8rem; background: var(--paper); color: var(--ink); }
+#card-inspector::backdrop { background: #081713b3; }
+#close-inspector { margin-bottom: .6rem; }
+#card-inspector h2 { font-size: 1.65rem; }

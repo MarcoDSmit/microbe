@@ -18,7 +18,7 @@
     <h1>Card library</h1>
     <div class="library-controls">
       <label>Search cards <input id="search" type="search" placeholder="Name, card ID or ability"></label>
-      <label>Card group <select id="group"><option value="">All cards</option><option>Bacteria</option><option>Host</option><option>Site</option><option>Objective</option></select></label>
+      <label>Card group <select id="group"><option value="">Both decks</option><option>Bacteria</option><option>Host</option><option>Site</option><option>Objective</option></select></label>
     </div>
     <details>
       <summary>Pathogen Universe connection</summary>
@@ -28,6 +28,10 @@
     </details>
     <p id="count" role="status"></p>
     <div id="cards" class="library-cards"></div>
+    <dialog id="card-inspector" aria-label="Enlarged card">
+      <button id="close-inspector" class="secondary" type="button" autofocus>Close</button>
+      <div id="inspected-card"></div>
+    </dialog>
     <noscript>Enable JavaScript to browse the cards.</noscript>
   </main>
 </body>
