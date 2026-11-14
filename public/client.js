@@ -1,4 +1,4 @@
-import { act, canReachOptimal, newGame, printedCost, view } from "/local-rules.js";
+import { act, canReachOptimal, matchReplay, newGame, printedCost, view } from "/local-rules.js";
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
@@ -355,15 +355,18 @@ function decision() {
   }
   const skipBoon = !selected.size && ["recirculate","relocate","tradeDraw"].includes(p.kind);
   const skipTuck = !selected.size && p.kind === "attack" && p.min === 0;
-  return '<div class="panel choice"><h2>Resolve a choice</h2><p>' + safe(p.prompt) + '</p>' +
-    options(p, p.kind === "draft") + button(skipBoon ? "Skip boon" : skipTuck ? "Skip tuck" : "Confirm choice","choose",
+  const preview = p.preview?.length ? '<div class="choices">' + p.preview.map(id =>
+    '<article class="choice-card panel ' + cardOf(id).faction.toLowerCase() + '">' +
+    cardFace(cardOf(id), id) + '</article>').join("") + '</div>' : "";
+  const choiceKey = [game.faction, game.turnNumber, p.kind, ...(p.choices ?? [])].join(",");
+  return '<div class="panel choice" data-choice-key="' + safe(choiceKey) + '"><h2>Resolve a choice</h2><p>' + safe(p.prompt) + '</p>' +
+    preview + options(p, p.kind === "draft") + button(skipBoon ? "Skip boon" : skipTuck ? "Skip tuck" : "Confirm choice","choose",
       selected.size < p.min || selected.size > p.max || busy ? "disabled" : "","primary") + '</div>';
 }
 
 function renderHand() {
   const legal = game.legal[picked];
   const recent = game.recentHand ?? [];
-  const handOrder = [...recent, ...game.hand.filter(id => !recent.includes(id))];
   const caption = !game.hand.length ? "Your hand is empty." : legal ?
     legal.cost === 0 ? "Choose a highlighted space to play this card at cost 0." :
       payment.size === legal.cost ? (dropSpace ? "Payment ready. Confirm the destination below." : "Payment ready. Click an open space to play.") :
@@ -374,7 +377,7 @@ function renderHand() {
     (dropSpace && legal ? '<div class="card-controls">' + button("Play at " + siteName(dropSpace.site),"confirmDrop",
       payment.size !== legal.cost || busy ? "disabled" : "", "primary") + button("Cancel","clear") + '</div>' :
       legal ? button("Clear selection","clear") : "") + '</div><div class="hand-payment-layout"><div class="hand" data-recent="' +
-    safe(recent.join(",")) + '">' + handOrder.map((id) => {
+    safe(recent.join(",")) + '">' + game.hand.map((id) => {
       const c = cardOf(id), paying = payment.has(id), active = picked === id;
       const idAttr = 'data-id="' + safe(id) + '" ';
       const canPay = paymentMode && !active;
@@ -405,6 +408,8 @@ function renderScore() {
     }).join("") + '</div>' + (game.series ? '<p class="series-score"><b>Series wins</b> · Bacteria ' + game.series.Bacteria +
       ' · Host ' + game.series.Host + ' · Ties ' + game.series.ties + '</p>' : '') +
     (game.startedAt ? '<p>Match time · ' + elapsedTime() + '</p>' : '') +
+    '<p class="meta">Replay includes both players’ cards and objectives.</p>' +
+    button("Download match replay","exportReplay",busy ? "disabled" : "") +
     button("Play again","rematch",busy ? "disabled" : "", "primary") + '</section>';
 }
 function elapsedTime() {
@@ -450,7 +455,7 @@ function render() {
   }
   if (localMatch && game?.status === "finished") {
     app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? "Solo vs bot" : "Pass &amp; Play") +
-      '</span>' + renderScore() +
+      '</span>' + renderScore() + err() +
       '<div>' + button("Back to lobby","leave") + '</div></article>';
     return;
   }
@@ -494,6 +499,7 @@ function render() {
     (played.length ? played.map(entry => '<li>Turn ' + entry.turn + ' · ' + safe(cardOf(entry.id).name) +
       ' · ' + entry.points + ' VP at play</li>').join("") : '') + '</ol><ol class="log">' +
     game.log.slice().reverse().map((item) => '<li>' + safe(item) + '</li>').join("") + '</ol></div>';
+  const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const previousHand = app.querySelector(".hand");
   const handScroll = previousHand?.dataset.recent === (game.recentHand ?? []).join(",") ? previousHand.scrollLeft : 0;
   const focused = document.activeElement?.dataset;
@@ -512,6 +518,8 @@ function render() {
       (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : sidePanel === "discards" ? discards : log) +
       '</aside>' : '') + '</div></article>';
   app.querySelector(".hand").scrollLeft = handScroll;
+  const nextChoice = app.querySelector("[data-choice-key]");
+  if (nextChoice && nextChoice.dataset.choiceKey !== previousChoice) nextChoice.scrollIntoView({block:"nearest"});
   app.querySelector(".match-key").open = !!openedKey;
   if (focusedAction && focusedId) {
     [...app.querySelectorAll("button[data-action][data-id]")].find(node =>
@@ -609,6 +617,20 @@ app.addEventListener("click", async (event) => {
   }
   if (node.disabled || node.getAttribute("aria-disabled") === "true") return;
   const {action,id,site,slot} = node.dataset;
+  if (action === "exportReplay") {
+    try {
+      const replay = localMatch ? matchReplay(localMatch) : await request(room() + "/replay", { headers:authorization() });
+      replay.mode = soloFaction ? "solo" : localMatch ? "pass-and-play" : "online";
+      if (soloFaction) replay.humanFaction = soloFaction;
+      const url = URL.createObjectURL(new Blob([JSON.stringify(replay, null, 2)], {type:"application/json"}));
+      const download = document.createElement("a");
+      download.href = url;
+      download.download = "microbe-wars-replay.json";
+      download.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) { error = e.message; render(); }
+    return;
+  }
   if (action === "rematch") {
     if (!localMatch) return move({type:"rematch"});
     localMatch = act(localMatch, null, {type:"rematch"});

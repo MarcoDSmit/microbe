@@ -1,5 +1,5 @@
 import data from "./data.json" with { type: "json" };
-import { act, newGame, RuleError, view } from "./game.js";
+import { act, matchReplay, newGame, RuleError, view } from "./game.js";
 
 const tokenPattern = /^[a-f0-9]{48}$/;
 const TTL = 14 * 86400000;
@@ -51,7 +51,7 @@ export async function api(request, store) {
       if (!await store.create(row)) return problem("Could not allocate a room. Try again.", 503);
       return json({ token: seat, invite, game: publicState(row, state, faction) }, 201);
     }
-    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{10})(?:\/(join|action))?$/);
+    const match = path.match(/^\/api\/rooms\/([A-Z0-9]{10})(?:\/(join|action|replay))?$/);
     if (!match) return problem("Unknown endpoint.", 404);
     const [, code, command] = match;
     const room = await store.get(code);
@@ -77,6 +77,10 @@ export async function api(request, store) {
     if (!command && request.method === "GET") {
       if (url.searchParams.get("since") === String(room.revision)) return new Response(null, { status: 204, headers: {"Cache-Control":"no-store"} });
       return json(publicState(room, state, faction));
+    }
+    if (command === "replay" && request.method === "GET") {
+      if (state.status !== "finished") return problem("Finish the match before exporting it.", 409);
+      return json(matchReplay(state));
     }
     if (command === "action" && request.method === "POST") {
       const { revision, action } = await input(request);

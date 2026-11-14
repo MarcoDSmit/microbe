@@ -83,7 +83,7 @@ function draw(s, f, n) {
 }
 function gainCards(player, ids) {
   if (!ids.length) return;
-  player.hand.push(...ids);
+  player.hand.unshift(...ids);
   player.recentHand = ids;
 }
 function take(s, captor, target) {
@@ -105,10 +105,11 @@ function begin(s, f, extra = false) {
   s.extra = extra; s.nextExtra = false; s.exhausted = false;
   s.slots = s.actionRules ? 3 : 1; s.discount = 0; s.jointPlay = false;
   log(s, f + (extra ? " takes an extra turn." : " begins turn " + s.turnNumber + "."));
-  const boons = new Map(s.board.filter((site) => siteCards(site, f).length >= 3 && majority(site) === f).map(({id}) => {
+  const controlledBoons = s.board.filter((site) => siteCards(site, f).length >= 3 && majority(site) === f).map(({id}) => {
     const rules = siteRules[id];
     return [s.uniqueSiteBoons ? rules.boon : rules.legacyBoon ?? rules.boon, id];
-  }));
+  });
+  const boons = new Map(controlledBoons);
   s.sitePerks = { focusedDraw: boons.has("focusedDraw"), rebateSite: boons.get("rebate") ?? null, tuckDraw: boons.has("tuckDraw") };
   if (boons.has("discount")) s.discount = 1;
   if (boons.has("extraPlay")) {
@@ -117,7 +118,8 @@ function begin(s, f, extra = false) {
   }
   const jobs = [];
   if (boons.has("retrieve")) jobs.push({ kind: "retrieve", f, optional: true });
-  if (boons.has("draw")) jobs.push({ kind: "draw", f, count: 1 });
+  const drawCount = controlledBoons.filter(([boon]) => boon === "draw").length;
+  if (drawCount) jobs.push({ kind: "draw", f, count: drawCount });
   if (boons.has("recirculate")) jobs.push({ kind: "recirculate", f });
   if (boons.has("digest")) jobs.push({ kind: "filter", f, count: 2, required: true });
   if (boons.has("relocate")) jobs.push({ kind: "relocate", f, site: boons.get("relocate") });
@@ -267,7 +269,8 @@ function pump(s) {
         const p = s.players[job.f], heart = job.kind === "recirculate";
         if (p.hand.length && (heart ? p.discard.length >= 2 : p.deck.length >= 2)) s.pending = {
           ...job, choices: [...p.hand], min: 0, max: 1,
-          prompt: heart ? "Heart · Discard one card to recover " + p.discard.slice(-2).map(id => cards[id].name).join(" and ") + ", or skip." :
+          ...(heart ? { preview: p.discard.slice(-2) } : {}),
+          prompt: heart ? "Heart · Discard one card to recover the two cards shown, or skip." :
             "Ear · Discard one card from your hand to draw two, or skip.",
         };
         break;
@@ -431,7 +434,37 @@ function choices(p, selected) {
     new Set(selected).size === selected.length && selected.every((id) => p.choices.includes(id)), "Choose the required number of valid options.");
 }
 
+const replayFields = ["type", "card", "site", "slot", "pay", "selected", "protector", "destination"];
+
+export function matchReplay(s) {
+  if (s.status !== "finished") throw new RuleError("Finish the match before exporting it.");
+  return {
+    format: "microbe-wars-replay", version: 1, recording: s.recording ?? null,
+    result: { scores: s.scores, reason: s.reason, turns: s.turnNumber },
+    played: s.playedPoints ?? [],
+  };
+}
+
 export function act(s, f, action) {
+  if (action?.type === "rematch") return applyAction(s, f, action);
+  const start = s.recording ? null : structuredClone(s);
+  const pending = s.pending?.kind ?? null;
+  const result = applyAction(s, f, action);
+  const recording = result.recording ??= { start, actions: [], partial: start.turnNumber > 0 ||
+    sides.some(side => start.players[side].goals.length > 0) };
+  const move = {};
+  for (const field of replayFields) {
+    const value = action[field];
+    if (typeof value === "string" || Number.isInteger(value)) move[field] = value;
+    else if (Array.isArray(value) && ["pay", "selected"].includes(field)) {
+      move[field] = value.filter(id => typeof id === "string");
+    }
+  }
+  recording.actions.push({ faction: f, pending, action: move });
+  return result;
+}
+
+function applyAction(s, f, action) {
   requireRule(action && typeof action === "object" && !Array.isArray(action), "Choose an action.");
   if (action.type === "rematch") {
     requireRule(s.status === "finished", "Finish the match before starting a rematch.");

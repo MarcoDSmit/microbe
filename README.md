@@ -49,6 +49,16 @@ At a full site, an on-play tuck card can use the temporary seventh space if it h
 
 Keep the same browser tab open or reload it to retain its saved seat. There is no account-based seat recovery. Rooms expire after 14 days without a move. Use a separate tab or browser profile for the second seat when testing alone.
 
+## Playtest replays and bug reports
+
+After a match ends, choose **Download match replay** before starting a rematch. The JSON includes the starting game state, accepted actions in order, and the final score breakdown. A match already in progress when recording began is marked partial. A finished match saved before recording was added has a result and any available played-card history.
+
+The starting state includes both players’ hidden cards and objective data. Share replays only with people who should see that information. Online downloads require a valid seat and become available only once the match ends.
+
+For bot training, load the replay’s recording start state and feed each recorded faction and action through the matching version of `act` in `worker/game.js`. Before each action, use `view` for the acting faction as the model input. Use the action as the target and the result as an optional outcome label. Solo exports identify which faction the human controlled.
+
+**Report a bug** opens a public GitHub issue draft. A GitHub account is required to submit it. Include the mode, turn, cards involved and steps to reproduce.
+
 ## Run your own copy
 
 ### Publish on Netlify

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import data from "../worker/data.json" with { type: "json" };
-import { act, newGame, view } from "../worker/game.js";
+import { act, matchReplay, newGame, view } from "../worker/game.js";
 import { api } from "../worker/api.js";
 import { nextPlayer, passPlayView } from "../public/pass-play.js";
 
@@ -29,6 +29,8 @@ assert.equal(created.status, 201);
 const { token: owner, invite, game: lobby } = await created.json();
 const room = "/api/rooms/" + lobby.code;
 assert.equal(lobby.hand.length, 6);
+assert.equal((await hit(room + "/replay", "GET", undefined, owner)).status, 409);
+assert.equal((await hit(room + "/replay")).status, 403);
 assert.equal(lobby.deckCount, deckSize("Host") - 6);
 const expanded = newGame(random);
 const bacteriaCards = [...expanded.players.Bacteria.deck,...expanded.players.Bacteria.hand];
@@ -193,8 +195,29 @@ act(gut,"Host",{type:"end"});
 assert.deepEqual(gut.pending.choices,["B05","B06"]);
 assert.throws(()=>act(gut,"Bacteria",{type:"choose",selected:[]}),/required number/);
 act(gut,"Bacteria",{type:"choose",selected:["B06"]});
-assert.equal(gut.players.Bacteria.hand.at(-1),"B06");
+assert.equal(gut.players.Bacteria.hand[0],"B06");
 assert.deepEqual(gut.players.Bacteria.discard,["B05"]);
+
+const chainedBoons = boonFixture("N07");
+chainedBoons.board[1] = {id:"N10",slots:[piece("B01"),piece("B02"),piece("B03"),null,null,null]};
+chainedBoons.players.Bacteria.deck = ["B05","B06","B07","B08","B13"];
+chainedBoons.players.Bacteria.hand = ["B11","B12:2"];
+act(chainedBoons,"Host",{type:"end"});
+assert.deepEqual(view(chainedBoons,"Bacteria").pending.choices,["B05","B06"]);
+act(chainedBoons,"Bacteria",{type:"choose",selected:["B05"]});
+assert.deepEqual(view(chainedBoons,"Bacteria").pending.choices,["B07","B08"]);
+act(chainedBoons,"Bacteria",{type:"choose",selected:["B07"]});
+act(chainedBoons,"Bacteria",{type:"drawCard"});
+act(chainedBoons,"Bacteria",{type:"drawCard"});
+assert.deepEqual(chainedBoons.players.Bacteria.hand,["B13","B07","B05","B11","B12:2"]);
+
+const legacyDraws = boonFixture("N07");
+legacyDraws.uniqueSiteBoons = false;
+legacyDraws.board[1] = {id:"N11",slots:[piece("B01"),piece("B02"),piece("B03"),null,null,null]};
+legacyDraws.players.Bacteria.deck = ["B05","B06","B07"];
+legacyDraws.players.Bacteria.hand = ["B11"];
+act(legacyDraws,"Host",{type:"end"});
+assert.deepEqual(legacyDraws.players.Bacteria.hand,["B05","B06","B11"]);
 
 const genital = boonFixture("N08","Host");
 genital.players.Host.hand = ["H05","H11","H06","H03","H01","H15"];
@@ -351,6 +374,12 @@ assert.equal(limit.turn,"Host");
 limit.players.Host.deck = [];
 act(limit,"Host",{type:"end"});
 assert.equal(limit.status,"finished");
+const replayRoom = db.get(lobby.code);
+db.set(lobby.code, {...replayRoom, state:JSON.stringify({...limit, creatorFaction:"Host"})});
+const downloadedReplay = await hit(room + "/replay", "GET", undefined, owner);
+assert.equal(downloadedReplay.status,200);
+assert.deepEqual(await downloadedReplay.json(),matchReplay(limit));
+db.set(lobby.code,replayRoom);
 assert.ok(Number.isInteger(limit.scores.Host.total));
 assert.deepEqual(Object.keys(passPlayView(limit,null,view)),["status","scores","reason","series","startedAt","endedAt"]);
 const seriesRematch = act(limit,"Host",{type:"rematch"});
@@ -394,7 +423,7 @@ economy.players.Bacteria.discard = ["B01","B02"];
 const initialDeck = economy.players.Bacteria.deck.length;
 act(economy,"Bacteria",{type:"takeDiscard"});
 assert.deepEqual(economy.players.Bacteria.discard,["B01"]);
-assert.equal(economy.players.Bacteria.hand.at(-1),"B02");
+assert.equal(economy.players.Bacteria.hand[0],"B02");
 act(economy,"Bacteria",{type:"drawCard"});
 assert.equal(economy.players.Bacteria.deck.length,initialDeck-1);
 act(economy,"Bacteria",{type:"play",card:"B04:2",site:"N01",slot:0,pay:[]});
@@ -501,6 +530,11 @@ for (let i = 0; i < 20; i++) {
     }
   }
   assert.equal(match.status, "finished");
+  const replay = JSON.parse(JSON.stringify(matchReplay(match)));
+  let reconstructed = replay.recording.start;
+  reconstructed = replay.recording.actions.reduce((state, entry) => act(state, entry.faction, entry.action), reconstructed);
+  assert.deepEqual(reconstructed.scores, replay.result.scores);
+  assert.deepEqual(reconstructed.board, match.board);
   const physical = [];
   const collect = (o) => { physical.push(o.id); o.tucked.forEach(collect); };
   for (const node of match.board) node.slots.filter(Boolean).forEach(collect);
