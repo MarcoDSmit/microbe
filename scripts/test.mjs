@@ -35,6 +35,22 @@ const bacteriaCards = [...expanded.players.Bacteria.deck,...expanded.players.Bac
 assert.equal(bacteriaCards.length,93);
 assert.ok(bacteriaCards.includes("B46") && !bacteriaCards.includes("B46:2"));
 assert.ok(!bacteriaCards.includes("B67"));
+
+const additionalSynergy = {
+  "Liver": ["B04", "B25"],
+  "Middle Ear": ["B31", "B36"],
+  "Eye": ["B31", "B34", "B51"],
+  "Skin & Soft Tissue": ["B28", "B34"],
+};
+for (const [siteName, cardIds] of Object.entries(additionalSynergy)) {
+  const site = data.sites.find(({name}) => name === siteName);
+  for (const id of cardIds) {
+    const game = newGame(random);
+    game.board = [{id:site.id, slots:[piece(id), null, null, null, null, null]}];
+    const points = view(game, "Bacteria").sitePoints[site.id].Bacteria;
+    assert.equal(points - data.cards[id].base - 3, 2, id + " synergy at " + siteName);
+  }
+}
 for (const card of Object.values(data.cards).filter(card => card.copies != null)) {
   for (const drug of Object.values(data.cards).filter(card => card.rail)) {
     const match = card.optimal.includes(drug.mark) ? "OPTIMAL" : card.active.includes(drug.mark) ? "ACTIVE" : "NONE";
