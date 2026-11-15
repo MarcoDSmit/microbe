@@ -17,7 +17,7 @@ const lessons = [
   },
   {
     title: "Read an Optimal match",
-    prompt: "The antibiotic has a matching symbol under Optimal on Staphylococcus aureus at another site. Its on-play attack can reach that target.",
+    prompt: "You play flucloxacillin. B31 MSSA is at another site and shows the flucloxacillin heart under O. What can you do?",
     choices: ["Choose one distant Optimal target instead of the local tuck", "Tuck at both sites", "Treat the match as Resistance"],
     answer: 0,
     success: "Optimal can reach one distant target instead of the local attack. Active matches are local. Resistance may trigger the bacterium’s printed reaction.",
@@ -25,7 +25,7 @@ const lessons = [
   },
   {
     title: "Check Resistance before playing",
-    prompt: "Host plays flucloxacillin at the same site as B32 MRSA. The flucloxacillin symbol sits in MRSA’s Resistance row, and its reaction is unused.",
+    prompt: "Host plays flucloxacillin at the same site as B32 MRSA. The flucloxacillin heart sits in MRSA’s R section, and its reaction is unused.",
     choices: ["Tuck MRSA", "MRSA stays visible and Bacteria draws 1 after the attack", "Host takes the card back"],
     answer: 1,
     success: "A Resistance match blocks the tuck. A matching local antibiotic play can trigger one draw per bacterial copy per game.",

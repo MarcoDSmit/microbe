@@ -12,15 +12,56 @@
     .lesson { display: grid; gap: .7rem; }
     .lesson button { justify-self: start; text-align: left; }
     .lesson [role=status]:empty { display: none; }
+    .card-guide { display: grid; gap: 1rem; }
+    .guide-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
+    .guide-grid figure, .guide-grid dl { margin: 0; }
+    .guide-grid figcaption { margin-top: .35rem; }
+    .guide-grid h3 { margin-bottom: .5rem; }
+    .guide-grid dt { font-weight: 700; }
+    .guide-grid dd { margin: .2rem 0 .65rem; }
+    .guide-grid section + section { margin-top: 1rem; }
+    @media (max-width: 36rem) {
+      .guide-grid { grid-template-columns: 1fr; }
+      .guide-grid figure { max-width: 19rem; margin-inline: auto; }
+    }
     .practice-links { display: flex; gap: 1rem; flex-wrap: wrap; }
   </style>
 </head>
 <body>
   <main>
     <h1>Practice a turn</h1>
-    <p>Try six decisions on a practice board. Your match stays in its own tab.</p>
-    <nav class="practice-links" aria-label="Rules links"><a href="glossary.html">Play glossary</a><a href="/">Game lobby</a></nav>
-    <section class="panel lesson" aria-labelledby="lesson-title">
+    <p>Read the card guide, then try the practice questions.</p>
+    <nav class="practice-links" aria-label="Rules links"><a href="#card-guide">Read a card</a><a href="#practice">Start practice</a><a href="glossary.html">Play glossary</a><a href="/">Game lobby</a></nav>
+    <section class="panel card-guide" id="card-guide" aria-labelledby="card-guide-title">
+      <h2 id="card-guide-title">How to read a playing card</h2>
+      <div class="guide-grid">
+        <figure>
+          <img class="card-art" src="card-art/B31.webp" alt="B31 Staphylococcus aureus MSSA. The heart is in O, six symbols including the blue square are in A, and R is blank. The Synergy box lists IV Site, Prosthetic Joint, Eye, and Middle Ear for +2 VP." width="750" height="1050">
+          <figcaption class="meta">B31 · Staphylococcus aureus — MSSA</figcaption>
+        </figure>
+        <div>
+          <section aria-labelledby="rail-guide">
+            <h3 id="rail-guide">O / A / R at the top</h3>
+            <p>Find the antibiotic’s symbol in the bacterium’s rail. The symbol identifies the drug. The letter tells you what the match does.</p>
+            <dl>
+              <dt>O · Optimal</dt>
+              <dd>The flucloxacillin heart on B31 allows a local tuck. An eligible on-play antibiotic can choose one distant Optimal target instead of its local attack.</dd>
+              <dt>A · Active</dt>
+              <dd>The vancomycin square on B31 allows a tuck at the same site only. Follow any limits on the antibiotic card.</dd>
+              <dt>R · Resistance</dt>
+              <dd>On B32 MRSA, the flucloxacillin heart is in R. It blocks the tuck. Playing the matching antibiotic at that site can trigger the printed reaction once per copy per game.</dd>
+              <dt>Symbol absent</dt>
+              <dd>That antibiotic has no matching tuck or R reaction against this card.</dd>
+            </dl>
+          </section>
+          <section aria-labelledby="synergy-guide">
+            <h3 id="synergy-guide">Synergy near the bottom</h3>
+            <p>B31 has <strong>4 base VP</strong> in the bottom-right badge. Its Synergy box adds <strong>+2 VP</strong> while it is visible at IV Site, Prosthetic Joint, Eye, or Middle Ear. A slash lists alternatives for one award. If a card has two separate conditions, both can score when met. The site’s own tag bonus can also apply.</p>
+          </section>
+        </div>
+      </div>
+    </section>
+    <section class="panel lesson" id="practice" aria-labelledby="lesson-title">
       <p class="eyebrow" id="lesson-progress"></p>
       <h2 id="lesson-title" tabindex="-1">Practice</h2>
       <p id="lesson-prompt"></p>
