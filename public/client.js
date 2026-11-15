@@ -2,7 +2,7 @@ import { act, canReachOptimal, matchReplay, newGame, printedCost, view } from "/
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
-import { tuckScoreLabel } from "/card-display.js";
+import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "/card-display.js";
 import { printedCardCopy } from "/printed-card-copy.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
 
@@ -29,7 +29,11 @@ const other = (f) => f === "Host" ? "Bacteria" : "Host";
 const cardOf = (id) => id && data.cards[id.split(":")[0]];
 const copyLabel = (id) => id.endsWith(":2") ? " · Copy 2" : " · Copy 1";
 const siteName = (id) => data.sites.find((s) => s.id === id)?.name || id;
-const icon = (mark) => mark ? '<img alt="' + safe(mark) + '" src="/icons/' + safe(mark.toLowerCase()) + '.svg">' : "";
+const icon = mark => {
+  const glyph = matchGlyphs[mark];
+  return glyph ? '<i class="match-glyph" role="img" aria-label="' + safe(mark) +
+    '" style="color:' + glyph[1] + '">' + glyph[0] + '\uFE0E</i>' : "";
+};
 const button = (text, action, extra = "", cls = "secondary") =>
   '<button type="button" class="' + cls + '" data-action="' + action + '" ' + extra + '>' + safe(text) + '</button>';
 const badge = (text, f = "") => '<span class="badge ' + f.toLowerCase() + '">' + safe(text) + '</span>';
@@ -222,6 +226,11 @@ function rail(card) {
     lanes.map((lane) => '<span class="lane">' + order.map((k) =>
       '<span>' + (lane.includes(k) ? icon(k) : "") + '</span>').join("") + '</span>').join("") + '</div>';
 }
+function cardArt(id, className = "", alt = "") {
+  return '<img class="card-art ' + className + '" src="' + safe(cardArtUrl(id)) +
+    '" alt="' + safe(alt) + '" width="750" height="1050" loading="lazy" decoding="async" draggable="false">';
+}
+
 function cardDetail() {
   const instance = inspect || picked;
   const card = cardOf(instance);
@@ -250,7 +259,7 @@ function cardDetail() {
           safe(value[0] + value.slice(1).toLowerCase()) + " match. Check the ability and defenses.") : "No matching action.") + '</p>';
   }
   const { ability, synergy } = printedCardCopy(card);
-  return '<div class="panel detail"><h2>' + safe(cardTitle(card)) + '</h2><p>' + safe(card.name) + '</p>' +
+  return '<div class="panel detail"><h2>' + safe(cardTitle(card)) + '</h2><p>' + safe(card.name) + '</p>' + cardArt(instance) +
     strip(card) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
     '<p class="meta">' + safe(cardTags(card).join(" · ") + " · cost " + printedCost(instance, game.hostBalance) +
       " · base " + card.base + " VP" + tuckScoreLabel(card)) + '</p>' +
@@ -284,7 +293,7 @@ function renderBoard() {
       if (piece) {
         const c = cardOf(piece.id);
         return '<button class="slot ' + c.faction.toLowerCase() + '" data-action="inspect" data-id="' + piece.id +
-          '" title="' + safe(c.name) + '">' + strip(c,true) + '<span class="slot-name">' + safe(cardTitle(c)) +
+          '" title="' + safe(c.name) + '">' + cardArt(piece.id,"board-card-art") + strip(c,true) + '<span class="slot-name">' + safe(cardTitle(c)) +
           '</span><span class="slot-note">' + safe(cardTags(c,true).join(" · ")) + '</span>' +
           (piece.tucked.length ? '<span class="slot-note">' + piece.tucked.length + ' tucked</span>' : "") +
           (game.spentReactions?.[piece.id] ? '<span class="slot-note">Reaction spent</span>' : '') +
@@ -317,14 +326,15 @@ function cardFace(card, id, effectiveCost) {
   const { ability, synergy } = printedCardCopy(card);
   const cost = printedCost(id, game.hostBalance);
   const variant = card.name.split(" — ")[1];
-  return strip(card) + '<span class="card-head"><strong>' + safe(cardTitle(card)) + '</strong>' +
+  return cardArt(id) + '<span class="sr-only">' + strip(card) + '<span class="card-head"><strong>' + safe(cardTitle(card)) + '</strong>' +
     '<span class="cost" aria-label="Printed cost ' + cost + '">' + cost + '</span></span>' +
     (variant ? '<span class="card-variant">' + safe(variant) + '</span>' : '') +
     '<span class="card-tags">' + safe(cardTags(card).join(" · ")) + '</span><span class="card-stats">' +
     card.base + ' base VP' + tuckScoreLabel(card) +
-    (effectiveCost != null && effectiveCost !== cost ? ' · ' + effectiveCost + ' to play now' : '') + '</span>' +
+    '</span>' +
     (ability ? ability.split("\n") : []).map(line => '<span class="card-rule">' + safe(line) + '</span>').join("") +
-    (synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</span>' : "");
+    (synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</span>' : "") + '</span>' +
+    (effectiveCost != null && effectiveCost !== cost ? '<span class="card-stats">' + effectiveCost + ' to play now</span>' : "");
 }
 
 function options(p, objective = false) {

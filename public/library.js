@@ -1,6 +1,6 @@
 import data from "./library-data.js";
 import { printedCardCopy } from "./printed-card-copy.js";
-import { tuckScoreLabel } from "./card-display.js";
+import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "./card-display.js";
 import { libraryStorageKey, readPlayedCards } from "./library-session.js";
 import retiredCards from "./retired-cards.js";
 
@@ -109,6 +109,17 @@ function cardFace(card, expandable) {
         inspector.showModal();
       });
     } else title.textContent = card.name;
+    if (card.cost != null && !card.replacementId) {
+      const art = document.createElement("img");
+      art.className = "card-art";
+      art.src = cardArtUrl(card.id);
+      art.alt = "";
+      art.width = 750;
+      art.height = 1050;
+      art.loading = "lazy";
+      art.decoding = "async";
+      article.append(art);
+    }
     appendText(article, "p", card.identity !== card.name ? card.identity : "");
     if (card.cost != null) {
       if (card.number) appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
@@ -119,16 +130,19 @@ function cardFace(card, expandable) {
       appendText(article, "small", card.timing?.replaceAll("_", " ").toLowerCase());
       const strips = card.group === "Bacteria"
         ? [["Optimal",card.optimal],["Active",card.active],["Resistance",card.resist]]
-        : [["Antibiotic symbol",card.mark ? [card.mark] : []]];
+        : [["Antibiotic symbol",card.mark && (card.rail || card.replacementId) ? [card.mark] : []]];
       for (const [label,symbols] of strips) {
         if (!symbols?.length) continue;
         const row = appendText(article, "div", label);
         row.className = "library-spectrum";
         for (const symbol of symbols) {
-          const icon = document.createElement("img");
-          icon.src = "/icons/" + symbol.toLowerCase() + ".svg";
-          icon.alt = symbol;
-          row.append(icon);
+          const glyph = matchGlyphs[symbol];
+          if (!glyph) continue;
+          const icon = appendText(row, "i", glyph[0] + "\uFE0E");
+          icon.className = "match-glyph";
+          icon.style.color = glyph[1];
+          icon.setAttribute("role", "img");
+          icon.setAttribute("aria-label", symbol);
         }
       }
     }
