@@ -71,7 +71,7 @@ export function newGame(random = secureRandom) {
     status: "waiting", first, turn: first, turnNumber: 0, players,
     board, series:{Bacteria:0, Host:0, ties:0}, playedPoints:[], spentReactions:{},
     queue: [], pending: null, log: ["The two decks are shuffled."],
-    actionRules: true, hostBalance: true, uniqueSiteBoons: true, slots: 0, jointPlay: false, discount: 0, nextExtra: false, extra: false, exhausted: false, scores: null,
+    actionRules: true, hostBalance: true, uniqueSiteBoons: true, expandedResistance: true, slots: 0, jointPlay: false, discount: 0, nextExtra: false, extra: false, exhausted: false, scores: null,
   };
 }
 
@@ -326,8 +326,9 @@ function pump(s) {
         const antibiotic = location(s, job.id);
         const type = cardTypeId(job.id);
         let responses = [];
-        if (antibiotic && cards[job.id].type === "Antibiotic") {
+        if (antibiotic && cards[job.id].rail) {
           responses = siteCards(antibiotic.site, "Bacteria").filter((o) =>
+            (s.expandedResistance || ["B22", "B23"].includes(cardTypeId(o.id))) &&
             matrix[type]?.[cardTypeId(o.id)] === "TRIGGER" && !s.spentReactions?.[o.id]);
           task(s, ...responses.map((o) => ({ kind: "resistance", id: o.id, antibiotic: job.id })));
         }
@@ -338,7 +339,7 @@ function pump(s) {
         const b = location(s, job.id), h = location(s, job.antibiotic);
         if (!b || s.spentReactions?.[job.id]) break;
         (s.spentReactions ??= {})[job.id] = true;
-        log(s, cards[job.id].name + " resisted the treatment.");
+        log(s, cards[job.id].name + (cardTypeId(job.id) === "B55" ? " gained an opening after the antibiotic." : " resisted the treatment."));
         if (cardTypeId(b.piece.id) === "B23" && h && !h.piece.tucked.length && h.site === b.site) {
           s.pending = { ...job, f: "Bacteria", choices: ["draw", "tuck"], min: 1, max: 1,
             prompt: "Resistance triggered. Draw a card or tuck the antibiotic that caught nothing." };

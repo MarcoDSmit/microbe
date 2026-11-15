@@ -24,6 +24,14 @@ const lessons = [
     hint: "A distant tuck replaces the local attack.",
   },
   {
+    title: "Check Resistance before playing",
+    prompt: "Host plays flucloxacillin at the same site as B32 MRSA. The flucloxacillin symbol sits in MRSA’s Resistance row, and its reaction is unused.",
+    choices: ["Tuck MRSA", "MRSA stays visible and Bacteria draws 1 after the attack", "Host takes the card back"],
+    answer: 1,
+    success: "A Resistance match blocks the tuck. A matching local antibiotic play can trigger one draw per bacterial copy per game.",
+    hint: "Check the R row before committing cards to payment.",
+  },
+  {
     title: "Use a bonus play",
     prompt: "Later, you play Neutrophil — Recruitment at cost 0. Its card reads “Bonus play · 1 Immune card.” The Immune card you want costs 1.",
     choices: ["Spend another action and discard one card", "Spend no additional action and discard one card", "Spend no action and discard nothing"],

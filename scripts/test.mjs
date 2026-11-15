@@ -37,7 +37,8 @@ assert.equal((await hit(room + "/replay")).status, 403);
 assert.equal(lobby.deckCount, deckSize("Host") - 6);
 const expanded = newGame(random);
 const bacteriaCards = [...expanded.players.Bacteria.deck,...expanded.players.Bacteria.hand];
-assert.equal(bacteriaCards.length,93);
+assert.equal(bacteriaCards.length,94);
+assert.ok(bacteriaCards.includes("B68") && !bacteriaCards.includes("B68:2"));
 assert.ok(bacteriaCards.includes("B46") && !bacteriaCards.includes("B46:2"));
 assert.ok(!bacteriaCards.includes("B67"));
 
@@ -58,7 +59,7 @@ for (const [siteName, cardIds] of Object.entries(additionalSynergy)) {
 }
 for (const card of Object.values(data.cards).filter(card => card.copies != null)) {
   for (const drug of Object.values(data.cards).filter(card => card.rail)) {
-    const match = card.optimal.includes(drug.mark) ? "OPTIMAL" : card.active.includes(drug.mark) ? "ACTIVE" : "NONE";
+    const match = card.optimal.includes(drug.mark) ? "OPTIMAL" : card.active.includes(drug.mark) ? "ACTIVE" : card.resist.includes(drug.mark) ? "TRIGGER" : "NONE";
     assert.equal(data.matrix[drug.id][card.id],match);
   }
 }
@@ -280,6 +281,33 @@ skinSynergy.players.Host.deck=[];
 act(skinSynergy,"Host",{type:"end"});
 assert.equal(skinSynergy.scores.Bacteria.synergy,2);
 assert.equal(skinSynergy.scores.Host.synergy,2);
+for (const [bacterium, drug] of [
+  ["B06","H22"], ["B26","H22"], ["B30","H28"], ["B32","H16"],
+  ["B36","H28"], ["B38","H19"], ["B55","H32"], ["B68","H28"],
+]) {
+  for (const enabled of [true,false]) {
+    const match = fixture("N01","Host",[bacterium],[drug,"H10","H11","H12","H13","H14","H15"]);
+    if (!enabled) delete match.expandedResistance;
+    const deck = match.players.Bacteria.deck.length;
+    const cost = view(match,"Host").legal[drug].cost;
+    act(match,"Host",{type:"play",card:drug,site:"N01",slot:1,pay:match.players.Host.hand.slice(1,1+cost)});
+    assert.equal(match.board[0].slots[0].id,bacterium);
+    assert.equal(match.players.Bacteria.deck.length,deck-Number(enabled));
+    assert.equal(Boolean(match.spentReactions[bacterium]),enabled);
+  }
+}
+const wrongSite = fixture("N01","Host",["B32"],["H16","H10","H11","H17","H12","H13","H14","H15"]);
+let mrsaDraws = wrongSite.players.Bacteria.deck.length;
+act(wrongSite,"Host",{type:"play",card:"H16",site:"N02",slot:0,pay:["H10"]});
+assert.equal(wrongSite.players.Bacteria.deck.length,mrsaDraws);
+act(wrongSite,"Host",{type:"end"});
+act(wrongSite,"Bacteria",{type:"end"});
+wrongSite.spentReactions.B32 = true;
+const secondCost = view(wrongSite,"Host").legal.H17.cost;
+act(wrongSite,"Host",{type:"play",card:"H17",site:"N01",slot:1,pay:wrongSite.players.Host.hand.filter(id=>id!=="H17").slice(0,secondCost)});
+assert.equal(wrongSite.players.Bacteria.deck.length,mrsaDraws);
+assert.equal(wrongSite.board[0].slots[0].id,"B32");
+
 const resistance = fixture("N01","Host",["B23"],["H22","H10","H11","H12"]);
 act(resistance,"Host",{type:"play",card:"H22",site:"N01",slot:1,pay:["H10","H11","H12"]});
 assert.equal(resistance.pending.kind,"resistance");

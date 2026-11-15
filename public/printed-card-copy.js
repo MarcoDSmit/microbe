@@ -57,6 +57,7 @@ const copy = {
   B64: ["","Genital Tract +2 VP"],
   B65: ["","Genital Tract +2 VP"],
   B66: ["","Central Nervous System +2 VP"],
+  B68: ["", "Lung / Urinary Tract +2 VP"],
   B67: ["","Central Nervous System +2 VP"],
   H01: ["Tuck · 1 opponent card here.","+1 VP per other visible allied Innate card here"],
   H02: ["Bonus play · 1 Immune card.","+1 VP for majority here"],
@@ -98,5 +99,8 @@ const copy = {
 
 export function printedCardCopy(card) {
   const [ability, synergy] = copy[card.id] ?? [card.ability, card.synergy];
-  return { ability, synergy };
+  const response = card.resist?.length && !["B22", "B23"].includes(card.id)
+    ? (card.id === "B55" ? "Once/game · R here: Draw 1 (antibiotic disruption)." : "Once/game · R here: Draw 1.")
+    : "";
+  return { ability: [ability, response].filter(Boolean).join("\n"), synergy };
 }

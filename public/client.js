@@ -207,7 +207,7 @@ function strip(card, compact = false) {
   const lanes = [
     ["Optimal","O",card.optimal,"Local match or one distant on-play tuck"],
     ["Active","A",card.active,"Local tuck only"],
-    ["Resistance","R",card.resist,"Check the card’s Resistance reaction"],
+    ["Resistance","R",card.resist,"Local match · blocks tuck and can trigger a reaction"],
   ];
   return '<span class="match-strip' + (compact ? ' compact' : '') + '">' + lanes.filter(([, , marks])=>marks.length)
     .map(([label, initial, marks, hint]) => '<span class="match-group ' + label.toLowerCase() + '" title="' +
@@ -274,7 +274,7 @@ function renderBoard() {
   const ready = available && payment.size === available.cost && !busy;
   return '<details class="panel match-key"><summary>Match key · Optimal, Active, Resistance</summary>' +
     '<p>Find the antibiotic’s symbol on the bacterium. <b>Optimal (O)</b> qualifies for a local tuck or a single distant tuck instead of the on-play local attack. ' +
-    '<b>Active (A)</b> qualifies for a local tuck. <b>Resistance (R)</b> prevents the antibiotic from tucking the bacterium and can trigger its printed reaction, such as drawing a card. ' +
+    '<b>Active (A)</b> qualifies for a local tuck. <b>Resistance (R)</b> blocks the tuck. In new matches, playing the matching antibiotic here can give Bacteria a once-per-copy reaction. ' +
     'A symbol absent from all three rows gives no tuck. Follow any limits printed on the card.</p></details>' +
     '<p class="meta">To unlock a site boon, start your turn with at least 3 of your cards there and more than your opponent.</p><div class="board">' + game.board.map((site) => {
     const occupied = site.slots.slice(0,6).filter(Boolean), b = occupied.filter((o) => cardOf(o.id).faction === "Bacteria").length;
