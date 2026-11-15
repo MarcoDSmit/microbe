@@ -86,9 +86,16 @@ function gainCards(player, ids) {
   player.hand.unshift(...ids);
   player.recentHand = ids;
 }
-function take(s, captor, target) {
+function take(s, captor, target, remote = false) {
   const a = location(s, captor), b = location(s, target);
   if (!a || !b) return false;
+  const drug = cards[captor];
+  if (drug.rail && cards[target].faction === "Bacteria") {
+    const match = matrix[cardTypeId(captor)]?.[cardTypeId(target)];
+    if (match === "OPTIMAL" || match === "ACTIVE") {
+      b.piece.antibioticTuck = { match, remote };
+    }
+  }
   a.piece.tucked.push(b.piece);
   b.site.slots[b.index] = null;
   log(s, cards[target].name + " tucked beneath " + cards[captor].name + ".");
@@ -181,7 +188,7 @@ function resolveCapture(s, job) {
       return;
     }
   }
-  take(s, job.captor, job.id);
+  take(s, job.captor, job.id, job.remote);
 }
 
 function hostReactions(s, id, resistanceTargets) {
@@ -339,6 +346,7 @@ function pump(s) {
         const b = location(s, job.id), h = location(s, job.antibiotic);
         if (!b || s.spentReactions?.[job.id]) break;
         (s.spentReactions ??= {})[job.id] = true;
+        b.piece.usedResistanceMatch = true;
         log(s, cards[job.id].name + (cardTypeId(job.id) === "B55" ? " gained an opening after the antibiotic." : " resisted the treatment."));
         if (cardTypeId(b.piece.id) === "B23" && h && !h.piece.tucked.length && h.site === b.site) {
           s.pending = { ...job, f: "Bacteria", choices: ["draw", "tuck"], min: 1, max: 1,
@@ -523,7 +531,7 @@ function applyAction(s, f, action) {
       }
       dest.slots[space(dest)] = target.piece; target.site.slots[target.index] = null;
       log(s, cards[p.job.id].name + " evaded the tuck and moved to " + sites.find((x) => x.id === dest.id).name + ".");
-    } else take(s, p.job.captor, p.job.id);
+    } else take(s, p.job.captor, p.job.id, p.job.remote);
     s.pending = null;
   } else if (action.type === "choose") {
     const p = s.pending;
@@ -588,6 +596,9 @@ function goalScore(s, f, id) {
   const controls = (site) => majority(siteAt(s, site)) === f;
   const countTucks = (type) => own.filter((o) => cards[o.id].type === type)
     .reduce((sum, o) => sum + o.tucked.filter((t) => cards[t.id].faction === "Bacteria").length, 0);
+  const tuckedBy = (type) => own.filter((o) => cards[o.id].type === type)
+    .flatMap((o) => o.tucked.filter((t) => cards[t.id].faction === "Bacteria"));
+  const antibioticTucks = () => tuckedBy("Antibiotic").map((t) => t.antibioticTuck);
   const b = own.filter((o) => cards[o.id].identity === "B lymphocyte");
   const t = own.filter((o) => cards[o.id].identity === "T lymphocyte");
   const map = {
@@ -609,6 +620,17 @@ function goalScore(s, f, id) {
     G16: () => unique(own.filter((o) => cards[o.id].type === "Antibiotic" && cards[o.id].route.toLowerCase().includes("oral"))) >= 2,
     G17: () => countTucks("Antibiotic"),
     G18: () => s.board.every((site) => majority(site) !== "Bacteria"),
+    G19: () => own.some((o) => o.usedResistanceMatch),
+    G20: () => unique(own.filter((o) => o.site.id === "N05" &&
+      (tagged(o.id, siteRules.N05.bacteriaTag) || cards[o.id].synergy.toLowerCase().includes(siteRules.N05.namedSite)))) >= 2,
+    G21: () => own.some((o) => tagged(o.id, "sti") &&
+      own.some((other) => other.site === o.site && cards[other.id].identity !== cards[o.id].identity)),
+    G22: () => {
+      const matches = new Set(antibioticTucks().map((t) => t?.match));
+      return matches.has("OPTIMAL") && matches.has("ACTIVE");
+    },
+    G23: () => antibioticTucks().some((t) => t?.match === "OPTIMAL" && t.remote),
+    G24: () => unique(tuckedBy("Immune").filter((o) => cards[o.id].resist.length > 0)) >= 2,
   };
   return Number(map[id]()) * goals[id].vp;
 }

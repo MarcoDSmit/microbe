@@ -268,6 +268,10 @@ function cardDetail() {
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
       '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
     (synergy ? '<p><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</p>' : "") +
+    (onBoard?.antibioticTuck ? '<p><b>Antibiotic tuck</b> · ' +
+      (onBoard.antibioticTuck.match === "OPTIMAL" ? "Optimal" : "Active") +
+      (onBoard.antibioticTuck.remote ? " · from another site" : " · local") + '</p>' : "") +
+    (onBoard?.usedResistanceMatch ? '<p><b>R match triggered</b></p>' : "") +
     (game.spentReactions?.[instance] ? '<p><b>Antibiotic reaction spent</b></p>' : '') +
     (onBoard?.tucked.length ? '<h3>Tucked beneath</h3>' + inspectList(onBoard.tucked.map(o => o.id)) : "") +
     match + '<small class="card-id">' + safe(card.id + (game.actionRules ? copyLabel(instance) : "")) + '</small></div>';

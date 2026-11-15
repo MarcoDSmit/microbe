@@ -360,6 +360,37 @@ assert.equal(remoteRefuge.pending.job.id,"B12");
 act(remoteRefuge,"Bacteria",{type:"refuge",destination:"N03"});
 assert.equal(remoteRefuge.board.find(s=>s.id==="N03").slots[0].id,"B12");
 
+const railObjectives = fixture("N01","Host",["B04","B46","B06"],["H22","H10","H11","H12"]);
+railObjectives.players.Host.goals = ["G22","G23"];
+railObjectives.players.Bacteria.goals = ["G19"];
+act(railObjectives,"Host",{type:"play",card:"H22",site:"N01",slot:3,pay:["H10","H11","H12"]});
+assert.deepEqual(view(railObjectives,"Host").objectivePoints,{G22:8,G23:0});
+assert.deepEqual(view(railObjectives,"Bacteria").objectivePoints,{G19:7});
+railObjectives.board[0].slots[2] = null;
+assert.deepEqual(view(railObjectives,"Bacteria").objectivePoints,{G19:0});
+
+const distantObjective = fixture("N02","Host",["B46"],["H22","H10","H11","H12"]);
+distantObjective.players.Host.goals = ["G23"];
+act(distantObjective,"Host",{type:"play",card:"H22",site:"N01",slot:0,pay:["H10","H11","H12"]});
+act(distantObjective,"Host",{type:"choose",selected:["B46"]});
+assert.deepEqual(view(distantObjective,"Host").objectivePoints,{G23:6});
+distantObjective.board[0].slots[0] = null;
+assert.deepEqual(view(distantObjective,"Host").objectivePoints,{G23:0});
+
+const newOrganisms = fixture("N01","Host",[],[]);
+newOrganisms.board[0] = {id:"N05",slots:[piece("B46"),piece("B66"),null,null,null,null]};
+newOrganisms.board[1].slots[0] = piece("B48");
+newOrganisms.board[1].slots[1] = piece("B51");
+newOrganisms.players.Bacteria.goals=["G20","G21"];
+newOrganisms.players.Host.goals=["G24"];
+newOrganisms.board[3].slots[0] = {...piece("H03"),tucked:[piece("B55"),piece("B68")]};
+assert.deepEqual(view(newOrganisms,"Bacteria").objectivePoints,{G20:7,G21:6});
+assert.deepEqual(view(newOrganisms,"Host").objectivePoints,{G24:7});
+newOrganisms.board[1].slots[1] = piece("B49");
+newOrganisms.board[3].slots[0].tucked = [piece("B06"),piece("B06:2")];
+assert.deepEqual(view(newOrganisms,"Bacteria").objectivePoints,{G20:7,G21:0});
+assert.deepEqual(view(newOrganisms,"Host").objectivePoints,{G24:0});
+
 const objectiveStatus = fixture("N01","Host",["B16"],["H01","H10"]);
 objectiveStatus.players.Bacteria.goals = ["G09"];
 objectiveStatus.board.find(s=>s.id==="N02").slots[0]=piece("B17");
