@@ -25,11 +25,27 @@ const lessons = [
   },
   {
     title: "Use a bonus play",
-    prompt: "Later, you play Neutrophil — Recruitment at cost 0. Its ability grants a bonus Immune play. The Immune card you want costs 1.",
+    prompt: "Later, you play Neutrophil — Recruitment at cost 0. Its card reads “Bonus play · 1 Immune card.” The Immune card you want costs 1.",
     choices: ["Spend another action and discard one card", "Spend no additional action and discard one card", "Spend no action and discard nothing"],
     answer: 1,
     success: "The bonus saves an action. The Immune card still costs one discard.",
     hint: "Separate the number of actions from the number of payment cards.",
+  },
+  {
+    title: "Read a compact tuck",
+    prompt: "You play B16. It reads “Tuck · Up to 1 opponent card here with no cards beneath it.” There’s one Host card with a tucked card under it at this site, and a Host card with nothing tucked beneath it at another site.",
+    choices: ["Tuck the Host card at this site", "Tuck the Host card at the other site", "Leave both cards in play"],
+    answer: 2,
+    success: "“Here” means this site. The local Host card already has a card beneath it, and “up to 1” lets you skip the tuck.",
+    hint: "Check both the location and the space beneath the target.",
+  },
+  {
+    title: "Read a compact synergy",
+    prompt: "B04 reads “Urinary Tract / Liver +2 VP.” It is visible at Liver. How much does this printed synergy add?",
+    choices: ["0 VP", "2 VP", "4 VP"],
+    answer: 1,
+    success: "The slash lists alternative sites for one award. The site can also grant a separate site-tag bonus.",
+    hint: "Either listed site qualifies for one +2 VP award.",
   },
   {
     title: "Unlock a site boon",

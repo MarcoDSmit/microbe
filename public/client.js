@@ -3,6 +3,7 @@ import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
 import { tuckScoreLabel } from "/card-display.js";
+import { printedCardCopy } from "/printed-card-copy.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
 
 const app = document.querySelector("#app");
@@ -248,15 +249,16 @@ function cardDetail() {
           (requiredSite ? " Play the antibiotic at " + safe(siteName(requiredSite)) + "." : "") :
           safe(value[0] + value.slice(1).toLowerCase()) + " match. Check the ability and defenses.") : "No matching action.") + '</p>';
   }
+  const { ability, synergy } = printedCardCopy(card);
   return '<div class="panel detail"><h2>' + safe(cardTitle(card)) + '</h2><p>' + safe(card.name) + '</p>' +
     strip(card) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
     '<p class="meta">' + safe(cardTags(card).join(" · ") + " · cost " + printedCost(instance, game.hostBalance) +
       " · base " + card.base + " VP" + tuckScoreLabel(card)) + '</p>' +
-    (card.ability || "No additional ability.").split("\n").map(line => '<p>' + safe(line) + '</p>').join("") +
+    (ability ? ability.split("\n") : []).map(line => '<p>' + safe(line) + '</p>').join("") +
     ((card.id === "H39" && !game.board.some(s => s.id === "N02")) ||
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
       '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
-    (card.synergy ? '<p><b>Synergy</b> · ' + safe(card.synergy) + '</p>' : "") +
+    (synergy ? '<p><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</p>' : "") +
     (game.spentReactions?.[instance] ? '<p><b>Antibiotic reaction spent</b></p>' : '') +
     (onBoard?.tucked.length ? '<h3>Tucked beneath</h3>' + inspectList(onBoard.tucked.map(o => o.id)) : "") +
     match + '<small class="card-id">' + safe(card.id + (game.actionRules ? copyLabel(instance) : "")) + '</small></div>';
@@ -312,6 +314,7 @@ function renderBoard() {
 
 const objectiveValue = (g) => g.vp + (g.per ? " VP per qualifying entry" : " VP if met");
 function cardFace(card, id, effectiveCost) {
+  const { ability, synergy } = printedCardCopy(card);
   const cost = printedCost(id, game.hostBalance);
   const variant = card.name.split(" — ")[1];
   return strip(card) + '<span class="card-head"><strong>' + safe(cardTitle(card)) + '</strong>' +
@@ -320,8 +323,8 @@ function cardFace(card, id, effectiveCost) {
     '<span class="card-tags">' + safe(cardTags(card).join(" · ")) + '</span><span class="card-stats">' +
     card.base + ' base VP' + tuckScoreLabel(card) +
     (effectiveCost != null && effectiveCost !== cost ? ' · ' + effectiveCost + ' to play now' : '') + '</span>' +
-    (card.ability || "No additional ability.").split("\n").map(line => '<span class="card-rule">' + safe(line) + '</span>').join("") +
-    (card.synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(card.synergy) + '</span>' : "");
+    (ability ? ability.split("\n") : []).map(line => '<span class="card-rule">' + safe(line) + '</span>').join("") +
+    (synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</span>' : "");
 }
 
 function options(p, objective = false) {

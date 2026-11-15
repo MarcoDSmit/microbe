@@ -1,4 +1,5 @@
 import data from "./library-data.js";
+import { printedCardCopy } from "./printed-card-copy.js";
 import { tuckScoreLabel } from "./card-display.js";
 import { libraryStorageKey, readPlayedCards } from "./library-session.js";
 import retiredCards from "./retired-cards.js";
@@ -54,8 +55,9 @@ function render() {
   const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const available = entries.filter(card => group.value ? card.group === group.value : card.number);
   const matchesSearch = card => {
+    const { ability, synergy } = printedCardCopy(card);
     const searchable = [card.name, card.id, card.identity, card.type, card.faction,
-      card.abilityName, card.ability, card.synergy, card.tags?.join(" "), card.power,
+      card.abilityName, ability, synergy, card.tags?.join(" "), card.power,
       card.bacteriaSynergy, card.hostSynergy, card.text].join(" ").toLowerCase();
     return words.every(word => searchable.includes(word) || word === String(card.number));
   };
@@ -132,7 +134,8 @@ function cardFace(card, expandable) {
     }
     if (card.vp != null) appendText(article, "small", `${card.vp} VP${card.per ? " per qualifying item" : ""}`);
     appendText(article, "strong", card.abilityName);
-    for (const line of [card.ability, card.synergy, card.power, card.bacteriaSynergy, card.hostSynergy, card.text]) appendText(article, "p", line);
+    const { ability, synergy } = card.replacementId ? card : printedCardCopy(card);
+    for (const line of [ability, synergy && "Synergy · " + synergy.split("\n").join(" · "), card.power, card.bacteriaSynergy, card.hostSynergy, card.text]) appendText(article, "p", line);
     if (card.replacementId) {
       appendText(article, "p", "Replaced by " + card.replacementId + " · " + card.replacement);
       appendText(article, "p", card.reason);
