@@ -352,7 +352,7 @@ function options(p, objective = false) {
     return '<button type="button" class="choice-option ' + (g ? "goal-choice " : c ? "choice-card " + c.faction.toLowerCase() + " " : "") +
       (selected.has(id) ? "picked" : "") + '" data-action="option" data-id="' + safe(id) + '" aria-pressed="' +
       selected.has(id) + '">' + (c ? cardFace(c,id) + '<small class="card-id">' +
-        safe(c.id + (game.actionRules ? copyLabel(id) : "")) + '</small>' : safe(name)) + (g ? '<small><strong>' + safe(objectiveValue(g)) + '</strong><br>' +
+        safe(c.id + (game.actionRules ? copyLabel(id) : "")) + '</small>' : safe(name)) + (g ? cardArt(id) + '<small><strong>' + safe(objectiveValue(g)) + '</strong><br>' +
       safe(g.text) + '</small>' : targetSite ? '<small>' + safe(siteName(targetSite.id)) + '</small>' : "") + '</button>';
   }).join("") + '</div>';
 }
@@ -513,7 +513,7 @@ function render() {
     (game.goals.length ? game.goals.map((id) => {
       const goal = data.goals[id], points = game.objectivePoints?.[id] ?? 0;
       return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '"><h3>' + safe(goal.name) +
-        '</h3><p><b>' + safe(objectiveValue(goal)) + '</b></p><p>' + safe(goal.text) + '</p><p class="objective-status">' +
+        '</h3>' + cardArt(id) + '<p><b>' + safe(objectiveValue(goal)) + '</b></p><p>' + safe(goal.text) + '</p><p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const played = (game.playedPoints ?? []).slice().reverse();

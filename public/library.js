@@ -109,7 +109,7 @@ function cardFace(card, expandable) {
         inspector.showModal();
       });
     } else title.textContent = card.name;
-    if (card.cost != null && !card.replacementId) {
+    if (card.group === "Objective" || (card.cost != null && !card.replacementId)) {
       const art = document.createElement("img");
       art.className = "card-art";
       art.src = cardArtUrl(card.id);

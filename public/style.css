@@ -84,7 +84,9 @@
 @media(max-width:580px){.board-content .board{grid-template-columns:minmax(0,1fr)}}
 
 .card-art{display:block;width:100%;height:auto;aspect-ratio:5/7;object-fit:contain;border-radius:.35rem}
-.hand-card .card-art,.choice-card .card-art{pointer-events:none}
+.hand-card .card-art,.choice-card .card-art,.goal-choice .card-art{pointer-events:none}
+.goal-choice{width:min(100%,14rem)}
+.goal-choice .card-art,.objective-card .card-art{margin:.4rem auto}
 .grid .slot .board-card-art{width:min(100%,5.2rem);height:auto;max-height:7.3rem;pointer-events:none}
 .match-glyph{display:inline-grid;place-items:center;min-width:1em;line-height:1;font:normal 1.05em/1 "Segoe UI Symbol",sans-serif;background:#f3f6f1;border-radius:.12rem}
 .rail.bacteria .match-glyph{transform:rotate(180deg)}
