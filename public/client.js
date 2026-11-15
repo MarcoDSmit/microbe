@@ -1,6 +1,8 @@
 import { act, canReachOptimal, matchReplay, newGame, printedCost, view } from "/local-rules.js";
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
+import { chooseHardMove } from "/trained-bot.js";
+import { tuckScoreLabel } from "/card-display.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
 
 const app = document.querySelector("#app");
@@ -20,7 +22,8 @@ let picked = null, payment = new Set(), selected = new Set(), inspect = null;
 let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
 let localMatch = null, revealed = null;
-let soloFaction = null, botTimer;
+let soloFaction = null, soloDifficulty = "normal", botTimer;
+const soloLabel = () => soloDifficulty === "hard" ? "Solo vs bot · Hard" : "Solo vs bot";
 const other = (f) => f === "Host" ? "Bacteria" : "Host";
 const cardOf = (id) => id && data.cards[id.split(":")[0]];
 const copyLabel = (id) => id.endsWith(":2") ? " · Copy 2" : " · Copy 1";
@@ -109,7 +112,7 @@ async function transact(path, body, isMove = false) {
 function saveLocal() {
   try {
     sessionStorage.setItem(soloFaction ? soloKey : passKey,
-      JSON.stringify(soloFaction ? {match:localMatch, faction:soloFaction} : localMatch));
+      JSON.stringify(soloFaction ? {match:localMatch, faction:soloFaction, difficulty:soloDifficulty} : localMatch));
   } catch {
     notice = "This browser could not save the match for refresh.";
   }
@@ -136,7 +139,8 @@ function playBot() {
   if (nextPlayer(localMatch) !== faction) return;
   try {
     const updated = structuredClone(localMatch);
-    localMatch = act(updated, faction, chooseBotMove(view(updated, faction), data));
+    const chooseMove = soloDifficulty === "hard" ? chooseHardMove : chooseBotMove;
+    localMatch = act(updated, faction, chooseMove(view(updated, faction), data));
     saveLocal();
     syncLocal();
     revealEndTurn();
@@ -178,6 +182,7 @@ function lobby() {
       '<h2>Create a match</h2><p class="meta">Each player gets a private six-card hand.</p>' +
       '<label for="faction">Your faction</label><select id="faction"><option>Bacteria</option><option>Host</option></select>' +
       button("Create private room","create",busy ? "disabled" : "","primary") +
+      '<label for="solo-difficulty">Bot difficulty</label><select id="solo-difficulty"><option value="normal">Normal</option><option value="hard">Hard</option></select>' +
       button("Play solo vs bot","startSolo",busy ? "disabled" : "","primary") +
       '<hr><h2>Same device</h2><p class="meta">Take turns passing the screen. Hands and objectives are hidden at each handoff.</p>' +
       button("Pass & Play","startLocal",busy ? "disabled" : "","primary")) + err() + '</div></section>';
@@ -246,7 +251,7 @@ function cardDetail() {
   return '<div class="panel detail"><h2>' + safe(cardTitle(card)) + '</h2><p>' + safe(card.name) + '</p>' +
     strip(card) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
     '<p class="meta">' + safe(cardTags(card).join(" · ") + " · cost " + printedCost(instance, game.hostBalance) +
-      " · base " + card.base + " VP · tuck " + card.tuck + " VP") + '</p>' +
+      " · base " + card.base + " VP" + tuckScoreLabel(card)) + '</p>' +
     (card.ability || "No additional ability.").split("\n").map(line => '<p>' + safe(line) + '</p>').join("") +
     ((card.id === "H39" && !game.board.some(s => s.id === "N02")) ||
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
@@ -313,7 +318,7 @@ function cardFace(card, id, effectiveCost) {
     '<span class="cost" aria-label="Printed cost ' + cost + '">' + cost + '</span></span>' +
     (variant ? '<span class="card-variant">' + safe(variant) + '</span>' : '') +
     '<span class="card-tags">' + safe(cardTags(card).join(" · ")) + '</span><span class="card-stats">' +
-    card.base + ' base VP · ' + card.tuck + ' VP per tuck' +
+    card.base + ' base VP' + tuckScoreLabel(card) +
     (effectiveCost != null && effectiveCost !== cost ? ' · ' + effectiveCost + ' to play now' : '') + '</span>' +
     (card.ability || "No additional ability.").split("\n").map(line => '<span class="card-rule">' + safe(line) + '</span>').join("") +
     (card.synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(card.synergy) + '</span>' : "");
@@ -454,7 +459,7 @@ function render() {
     return;
   }
   if (localMatch && game?.status === "finished") {
-    app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? "Solo vs bot" : "Pass &amp; Play") +
+    app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? soloLabel() : "Pass &amp; Play") +
       '</span>' + renderScore() + err() +
       '<div>' + button("Back to lobby","leave") + '</div></article>';
     return;
@@ -471,7 +476,7 @@ function render() {
     button("Take top discard","takeDiscard",canSpend && topDiscard ? 'title="' + safe(topDiscard.name) + '"' : "disabled") : "";
   const status = waiting ? "Waiting for your opponent" : game.status === "objectives" ? "Secret objective setup" :
     game.status === "finished" ? "Match complete" : game.turn === game.faction ? "Your turn" : other(game.faction) + "’s turn";
-  const summary = '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? "Solo vs bot" :
+  const summary = '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
     localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
     '</span><h1>Infection board</h1></div><div class="badges">' + badge("You · " + game.faction,game.faction) +
     badge("Draw deck " + game.deckCount) + badge("Opponent hand " + game.opponentHandCount,other(game.faction)) +
@@ -508,13 +513,13 @@ function render() {
   const openedKey = app.querySelector(".match-key")?.open;
   const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
-  app.innerHTML = '<article class="game">' + summary + bar + renderPublicPoints() + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
+  app.innerHTML = '<article class="game">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
     invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
     [["inspector","Inspector"],["objectives","Objectives"],["discards","Discards"],["log","Match log"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
     '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-and-health">' +
     renderHealth() + '<div class="board-content">' + renderBoard() + '</div></div>' +
-    renderHand() + '</section>' + (sidePanel ? '<aside class="aside">' +
+    renderPublicPoints() + bar + renderHand() + '</section>' + (sidePanel ? '<aside class="aside">' +
       (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : sidePanel === "discards" ? discards : log) +
       '</aside>' : '') + '</div></article>';
   app.querySelector(".hand").scrollLeft = handScroll;
@@ -621,7 +626,10 @@ app.addEventListener("click", async (event) => {
     try {
       const replay = localMatch ? matchReplay(localMatch) : await request(room() + "/replay", { headers:authorization() });
       replay.mode = soloFaction ? "solo" : localMatch ? "pass-and-play" : "online";
-      if (soloFaction) replay.humanFaction = soloFaction;
+      if (soloFaction) {
+        replay.humanFaction = soloFaction;
+        replay.botDifficulty = soloDifficulty;
+      }
       const url = URL.createObjectURL(new Blob([JSON.stringify(replay, null, 2)], {type:"application/json"}));
       const download = document.createElement("a");
       download.href = url;
@@ -640,6 +648,7 @@ app.addEventListener("click", async (event) => {
   }
   if (action === "startLocal" || action === "startSolo") {
     soloFaction = action === "startSolo" ? document.querySelector("#faction").value : null;
+    soloDifficulty = soloFaction ? document.querySelector("#solo-difficulty").value : "normal";
     localMatch = newGame();
     localMatch.status = "objectives";
     revealed = null; error = ""; notice = "";
@@ -709,6 +718,7 @@ try {
       if (savedSolo?.match && ["Host","Bacteria"].includes(savedSolo.faction)) {
         localMatch = savedSolo.match;
         soloFaction = savedSolo.faction;
+        soloDifficulty = savedSolo.difficulty === "hard" ? "hard" : "normal";
         syncLocal();
       }
     } catch {}

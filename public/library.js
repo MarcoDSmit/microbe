@@ -1,4 +1,5 @@
 import data from "./library-data.js";
+import { tuckScoreLabel } from "./card-display.js";
 import { libraryStorageKey, readPlayedCards } from "./library-session.js";
 import retiredCards from "./retired-cards.js";
 
@@ -109,7 +110,7 @@ function cardFace(card, expandable) {
     appendText(article, "p", card.identity !== card.name ? card.identity : "");
     if (card.cost != null) {
       if (card.number) appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
-      appendText(article, "small", `Cost ${card.cost} · ${card.base} base VP · ${card.tuck} VP per tuck`);
+      appendText(article, "small", `Cost ${card.cost} · ${card.base} base VP${tuckScoreLabel(card)}`);
       if (card.copies === 0) appendText(article, "p", "Reserve · Outside the draw deck");
       appendText(article, "p", [card.gram && card.gram !== "N/A" && "Gram-" + card.gram.toLowerCase(),
         card.route !== "N/A" && card.route, ...card.tags.map(tag => tag.replaceAll("_", " "))].filter(Boolean).join(" · "));

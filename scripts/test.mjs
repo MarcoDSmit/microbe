@@ -3,6 +3,9 @@ import data from "../worker/data.json" with { type: "json" };
 import { act, matchReplay, newGame, view } from "../worker/game.js";
 import { api } from "../worker/api.js";
 import { nextPlayer, passPlayView } from "../public/pass-play.js";
+import { tuckScoreLabel } from "../public/card-display.js";
+import { chooseBotMove } from "../public/solo-bot.js";
+import { chooseHardMove } from "../public/trained-bot.js";
 
 const piece = (id) => ({id,tucked:[],guardUsed:false,refugeUsed:0});
 const random = () => 0.19;
@@ -542,6 +545,28 @@ for (let i = 0; i < 20; i++) {
   assert.equal(physical.length, deckSize("Host") + deckSize("Bacteria"));
   assert.equal(new Set(physical).size, physical.length);
 }
+
+assert.equal(tuckScoreLabel(data.cards.B04), "");
+assert.match(tuckScoreLabel(data.cards.B16), /0 VP per tuck/);
+assert.match(tuckScoreLabel(data.cards.H16), /1 VP per tuck/);
+let hardDecisions = 0;
+for (const hardFaction of ["Bacteria", "Host"]) {
+  for (let seed = 1; seed <= 12; seed++) {
+    let rng = seed;
+    const match = newGame(() => ((rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0) / 2 ** 32));
+    match.status = "objectives";
+    for (let step = 0; match.status !== "finished" && step < 1000; step++) {
+      const side = nextPlayer(match), state = view(match, side);
+      const normal = chooseBotMove(state, data);
+      const action = side === hardFaction ? chooseHardMove(state, data) : normal;
+      if (JSON.stringify(action) !== JSON.stringify(normal)) hardDecisions++;
+      act(match, side, action);
+    }
+    assert.equal(match.status, "finished", hardFaction + " hard mode at seed " + seed);
+  }
+}
+assert.ok(hardDecisions > 0);
+console.log("Verified Hard mode completes 24 seeded matches across both factions.");
 
 console.log("Verified two private seats, invite race, illegal payment, stale writes, resistance, Refuge, Suppress and final scoring.");
 console.log("Verified three actions, top-discard recovery and card conservation across 20 complete games.");
