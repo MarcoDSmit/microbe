@@ -40,8 +40,8 @@ export function chooseBotMove(game, data) {
       const tuck = legal.tuckSites?.includes(site.id);
       const score = value(id) - legal.cost * .6 + (tuck ? 5 : legal.tuckSites ? -2 : 0) +
         (allies <= rivals && allies + 1 >= rivals ? 1.5 : 0) + (allies === 2 ? 1 : 0) +
-        (c.tags.includes(tag) ? 1.8 : 0) +
-        (rules.namedSite && c.synergy.toLowerCase().includes(rules.namedSite) ? 1.5 : 0) +
+        (c.tags.includes(tag) ? 2.8 : 0) +
+        (rules.namedSite && c.synergy.toLowerCase().includes(rules.namedSite) ? 3.2 : 0) +
         (c.id === "B18" && !game.extra ? 2 : 0);
       if (score <= bestScore) continue;
       const slot = site.slots.indexOf(null);
