@@ -41,14 +41,30 @@ const icon = mark => {
 };
 const buttonArt = new Map([
   ["Draw 1 card", "draw-one"],
+  ["Draw 2 cards", "draw-two"],
   ["Take top discard", "take-top-discard"],
   ["End turn", "end-turn"],
   ["Leave match", "leave-match"],
+  ["Accept tuck", "accept-tuck"],
+  ["Reveal my hand", "reveal-my-hand"],
+  ["Hide hand", "hide-hand"],
+  ["Leave this tab", "leave-this-tab"],
+]);
+const buttonFrames = new Map([
+  ["prepare", "play-frame"],
+  ["confirmDrop", "play-frame"],
+  ["objective", "confirm-frame"],
+  ["Confirm choice", "confirm-frame"],
+  ["Skip bonus", "skip-frame"],
+  ["Skip boon", "skip-frame"],
+  ["Skip tuck", "skip-frame"],
 ]);
 const button = (text, action, extra = "", cls = "secondary") => {
-  const art = buttonArt.get(text);
-  const label = art ? '<img src="/button-art/' + art + '.webp" alt="' + safe(text) +
-    '" width="854" height="270" draggable="false">' : safe(text);
+  const frame = buttonFrames.get(action) ?? buttonFrames.get(text);
+  const art = frame ?? buttonArt.get(text);
+  const label = art ? '<img src="/button-art/' + art + '.webp" alt="' + (frame ? "" : safe(text)) +
+    '" width="854" height="270" draggable="false">' +
+    (frame ? '<span class="art-button-label">' + safe(text) + '</span>' : "") : safe(text);
   return '<button type="button" class="' + cls + (art ? " art-button" : "") +
     '" data-action="' + action + '" ' + extra + '>' + label + '</button>';
 };
@@ -486,7 +502,7 @@ function render() {
       localMatch.pending ? "A response needs your attention." : "Your turn is ready.";
     app.innerHTML = '<section class="panel handoff"><span class="eyebrow">Pass &amp; Play</span><h1>Pass to ' +
       safe(faction) + '</h1><p>' + safe(prompt) + '</p><p class="meta">Hand the device over before revealing the next hand.</p>' +
-      button("I’m " + faction + " · Reveal my hand","revealLocal","","primary") +
+      button("Reveal my hand","revealLocal","","primary") +
       button("Leave match","leave","","plain") + (notice ? '<p class="notice">' + safe(notice) + '</p>' : "") + '</section>';
     return;
   }
