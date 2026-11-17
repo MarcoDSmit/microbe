@@ -44,6 +44,9 @@ const icon = mark => {
     '" style="color:' + glyph[1] + '">' + glyph[0] + '\uFE0E</i>' : "";
 };
 const buttonArt = new Map([
+  ["Play again", "play-again"],
+  ["Download match replay", "download-match-replay"],
+  ["Back to lobby", "back-to-lobby"],
   ["Draw 1 card", "draw-one"],
   ["Draw 2 cards", "draw-two"],
   ["Take top discard", "take-top-discard"],
