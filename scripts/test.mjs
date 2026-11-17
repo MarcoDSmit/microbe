@@ -593,6 +593,9 @@ for (let i = 0; i < 20; i++) {
   }
   assert.equal(match.status, "finished");
   const replay = JSON.parse(JSON.stringify(matchReplay(match)));
+  assert.deepEqual(replay.log, match.log);
+  assert.deepEqual(replay.timing, {startedAt:match.startedAt, endedAt:match.endedAt});
+  assert.ok(replay.timing.endedAt >= replay.timing.startedAt);
   let reconstructed = replay.recording.start;
   reconstructed = replay.recording.actions.reduce((state, entry) => act(state, entry.faction, entry.action), reconstructed);
   assert.deepEqual(reconstructed.scores, replay.result.scores);

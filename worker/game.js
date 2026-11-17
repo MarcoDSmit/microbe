@@ -450,7 +450,8 @@ export function matchReplay(s) {
   return {
     format: "microbe-wars-replay", version: 1, recording: s.recording ?? null,
     result: { scores: s.scores, reason: s.reason, turns: s.turnNumber },
-    played: s.playedPoints ?? [],
+    played: s.playedPoints ?? [], log: s.log ?? [],
+    timing: { startedAt: s.startedAt ?? null, endedAt: s.endedAt ?? null },
   };
 }
 

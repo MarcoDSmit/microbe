@@ -249,9 +249,9 @@ function cardArt(id, className = "", alt = "") {
 }
 
 function cardDetail() {
-  const instance = inspect || picked;
+  const instance = inspect;
   const card = cardOf(instance);
-  if (!card) return '<div class="panel detail"><h2>Card inspector</h2><p class="meta">Select a card on the board or in your hand to read its ability.</p></div>';
+  if (!card) return "";
   const site = game.board.find((s) => s.slots.some((o) => o?.id === instance));
   function findPiece(pieces) {
     for (const piece of pieces) {
@@ -466,18 +466,10 @@ function renderScore() {
         ' · tucked ' + s.tuck + ' · territory ' + s.territory + ' · objectives ' + s.objective + '</p></div>';
     }).join("") + '</div>' + (game.series ? '<p class="series-score"><b>Series wins</b> · Bacteria ' + game.series.Bacteria +
       ' · Host ' + game.series.Host + ' · Ties ' + game.series.ties + '</p>' : '') +
-    (game.startedAt ? '<p>Match time · ' + elapsedTime() + '</p>' : '') +
     '<p class="meta">Replay includes both players’ cards and objectives.</p>' +
     button("Download match replay","exportReplay",busy ? "disabled" : "") +
     button("Play again","rematch",busy ? "disabled" : "", "primary") + '</section>';
 }
-function elapsedTime() {
-  if (!game?.startedAt) return "";
-  const seconds = Math.max(0,Math.floor(((game.endedAt ?? Date.now()) - game.startedAt) / 1000));
-  const minutes = Math.floor(seconds / 60);
-  return minutes + ":" + String(seconds % 60).padStart(2,"0");
-}
-
 function renderPublicPoints() {
   if (!game.sitePoints) return "";
   const sites = Object.values(game.sitePoints);
@@ -527,7 +519,6 @@ function render() {
   const statusLine = '<div class="turn-status"><strong>' + safe(status) + '</strong>' +
     (game.turnNumber ? ' <span class="meta">· Turn ' + game.turnNumber + ' · ' + game.slots +
       (game.actionRules ? " actions left" : " normal plays left") + (game.jointPlay ? " · Site bonus play available" : "") + '</span>' : "") +
-    (game.startedAt ? ' <span class="meta" aria-label="Match time">· <time id="match-timer">' + elapsedTime() + '</time></span>' : '') +
     (game.actionRules && topDiscard ? '<div class="meta">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
     '</div>';
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
@@ -543,11 +534,6 @@ function render() {
       return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '">' + objectiveFace(goal) + '<p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
-  const played = (game.playedPoints ?? []).slice().reverse();
-  const log = '<div class="panel"><h2>Match log</h2><ol class="log">' +
-    (played.length ? played.map(entry => '<li>Turn ' + entry.turn + ' · ' + safe(cardOf(entry.id).name) +
-      ' · ' + entry.points + ' VP at play</li>').join("") : '') + '</ol><ol class="log">' +
-    game.log.slice().reverse().map((item) => '<li>' + safe(item) + '</li>').join("") + '</ol></div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const previousBoard = app.querySelector(".board-focus");
   const boardScroll = previousBoard?.scrollTop ?? null;
@@ -558,13 +544,15 @@ function render() {
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
   app.innerHTML = '<article class="game match-screen">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
     invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
-    [["inspector","Inspector"],["objectives","Objectives"],["discards","Discards"],["log","Match log"]].map(([id,label]) =>
+    [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
     '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
     renderBoard() + '</div><div class="hand-dock">' + statusLine + renderPublicPoints() +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
-      (sidePanel === "inspector" ? cardDetail() : sidePanel === "objectives" ? objectives : sidePanel === "discards" ? discards : log) +
-      '</aside>' : '') + '</div>' + renderHandPreview() + '</article>';
+      (sidePanel === "objectives" ? objectives : discards) +
+      '</aside>' : '') + '</div>' + renderHandPreview() +
+    (inspect ? '<dialog class="hand-preview inspected-card-preview" aria-label="Card details">' +
+      button("Close","closeCardPreview") + cardDetail() + '</dialog>' : '') + '</article>';
   const board = app.querySelector(".board-focus");
   if (board) {
     const nodes = [...board.querySelectorAll("[data-board-site]")];
@@ -580,8 +568,9 @@ function render() {
   }
   const preview = app.querySelector(".hand-preview");
   if (preview) {
-    preview.addEventListener("cancel", event => { event.preventDefault(); closeHandPreview(); });
-    preview.addEventListener("click", event => { if (event.target === preview) closeHandPreview(); });
+    const close = inspect ? closeCardPreview : closeHandPreview;
+    preview.addEventListener("cancel", event => { event.preventDefault(); close(); });
+    preview.addEventListener("click", event => { if (event.target === preview) close(); });
     preview.showModal();
   }
   const nextChoice = app.querySelector("[data-choice-key]");
@@ -664,6 +653,13 @@ function togglePayment(id) {
   render();
 }
 
+function closeCardPreview() {
+  const id = inspect;
+  inspect = null;
+  render();
+  app.querySelector('[data-action="inspect"][data-id="' + CSS.escape(id) + '"]')?.focus({preventScroll:true});
+}
+
 function closeHandPreview() {
   const id = handPreview;
   handPreview = null;
@@ -678,6 +674,7 @@ app.addEventListener("click", async (event) => {
   const {action,id,site,slot} = node.dataset;
   if (action === "previewHand") { handPreview = id; render(); return; }
   if (action === "closeHandPreview") { closeHandPreview(); return; }
+  if (action === "closeCardPreview") { closeCardPreview(); return; }
   if (action === "payHand") { togglePayment(id); return; }
   if (action === "siteView") {
     const wasOverview = boardOverview;
@@ -767,7 +764,7 @@ app.addEventListener("click", async (event) => {
   if (action === "place") return placeCard(site, slot);
   if (action === "confirmDrop" && dropSpace) return placeCard(dropSpace.site, dropSpace.slot);
   if (action === "panel") { sidePanel = sidePanel === id ? null : id; render(); return; }
-  if (action === "inspect") { inspect = id; sidePanel = "inspector"; render(); return; }
+  if (action === "inspect") { inspect = id; render(); return; }
   if (action === "clear") { picked = null; dropSpace = null; payment.clear(); paymentMode = false; render(); return; }
   if (action === "option") {
     const max = game.status === "objectives" ? 2 : game.pending?.max ?? 1;
@@ -802,10 +799,8 @@ try {
     seat = saved; await update(false);
   }
   render();
-  setInterval(() => {
+  if (!mobileCatalog) setInterval(() => {
     if (seat && !busy) update();
-    const timer = document.querySelector("#match-timer");
-    if (timer) timer.textContent = elapsedTime();
   }, 1200);
 } catch (e) {
   app.innerHTML = '<p class="loading error" role="alert">' + safe(e.message) + '</p>';

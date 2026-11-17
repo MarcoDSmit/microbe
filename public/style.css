@@ -154,3 +154,5 @@ button.art-button:active:not(:disabled) {filter:brightness(.9)}
 @media (forced-colors:active) {
   button.art-button {border:1px solid ButtonText}
 }
+
+.inspected-card-preview .card-art{width:auto;max-width:100%;max-height:max(10rem,calc(94dvh - 7rem));margin:auto}
