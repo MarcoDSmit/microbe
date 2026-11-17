@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import data from "../worker/data.json" with { type: "json" };
 import { act, matchReplay, newGame, score, view } from "../worker/game.js";
 import { api } from "../worker/api.js";
+import { createFirstGame, firstGameAllows, firstGameSteps } from "../public/first-game.js";
 import { nextPlayer, passPlayView } from "../public/pass-play.js";
 import { tuckScoreLabel } from "../public/card-display.js";
 import { chooseBotMove } from "../public/solo-bot.js";
@@ -629,6 +630,33 @@ for (const hardFaction of ["Bacteria", "Host"]) {
 }
 assert.ok(hardDecisions > 0);
 console.log("Verified Hard mode completes 24 seeded matches across both factions.");
+
+const guided = createFirstGame(newGame, data);
+assert.deepEqual(createFirstGame(newGame, data),guided);
+for (const side of ["Bacteria","Host"]) {
+  const ids = [...guided.players[side].hand,...guided.players[side].deck];
+  assert.equal(ids.length,deckSize(side));
+  assert.equal(new Set(ids).size,ids.length);
+}
+assert.deepEqual(guided.board.map(site=>site.id),["N09","N06","N02","N01"]);
+assert.ok(!firstGameAllows(firstGameSteps[1],{type:"drawCard"}));
+act(guided,"Bacteria",{type:"objectives",selected:["G01","G09"]});
+act(guided,"Host",{type:"objectives",selected:guided.players.Host.offer.slice(0,2)});
+for (const step of firstGameSteps.slice(1)) {
+  const action = {type:step.type};
+  if (step.card) Object.assign(action,{card:step.card,site:step.site,pay:step.pay,
+    slot:guided.board.find(site=>site.id===step.site).slots.indexOf(null)});
+  assert.ok(firstGameAllows(step,action));
+  act(guided,guided.turn,action);
+  if (step.card==="B02") assert.equal(guided.pending.kind,"bonus");
+  if (step.card==="B32") assert.equal(guided.slots,2);
+  if (step.type==="drawCard") assert.equal(guided.players.Bacteria.hand[0],"B36");
+  if (step.type==="takeDiscard") assert.equal(guided.players.Bacteria.hand[0],"B25");
+}
+assert.equal(guided.board[1].slots[1].tucked[0].id,"B32");
+assert.equal(guided.board[1].slots[1].tucked[0].antibioticTuck.match,"OPTIMAL");
+assert.equal(score(guided,"Host").tuck,1);
+console.log("Verified the fixed tutorial from objective selection to the vancomycin tuck.");
 
 console.log("Verified two private seats, invite race, illegal payment, stale writes, resistance, Refuge, Suppress and final scoring.");
 console.log("Verified three actions, top-discard recovery and card conservation across 20 complete games.");

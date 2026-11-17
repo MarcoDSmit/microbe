@@ -3,6 +3,7 @@ import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
 import mobileCatalog from "/mobile-catalog.js";
+import { createFirstGame, firstGameAllows, firstGameSteps } from "/first-game.js";
 import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "/card-display.js";
 import { printedCardCopy } from "/printed-card-copy.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
@@ -28,6 +29,8 @@ let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
 let handPreview = null, focusedSite = null, boardOverview = false;
 let localMatch = null, revealed = null;
+let firstGameStep = null;
+const guide = () => firstGameStep === null ? null : firstGameSteps[firstGameStep];
 let soloFaction = null, soloDifficulty = "normal", botTimer;
 const soloLabel = () => soloDifficulty === "hard" ? "Solo vs bot · Hard" : "Solo vs bot";
 const other = (f) => f === "Host" ? "Bacteria" : "Host";
@@ -158,7 +161,12 @@ function saveLocal() {
 
 function syncLocal() {
   clearTimeout(botTimer);
-  if (soloFaction) {
+  if (firstGameStep !== null) {
+    revealed = nextPlayer(localMatch);
+    game = view(localMatch, revealed);
+    const step = guide(), legal = game.legal[step?.card];
+    game.legal = legal ? {[step.card]:{...legal, sites:legal.sites.filter(site => site === step.site)}} : {};
+  } else if (soloFaction) {
     revealed = soloFaction;
     game = view(localMatch, soloFaction);
     if (nextPlayer(localMatch) === other(soloFaction)) botTimer = setTimeout(playBot, 450);
@@ -194,8 +202,24 @@ function move(action) {
   error = "";
   try {
     const updated = structuredClone(localMatch);
-    localMatch = act(updated, revealed, action);
-    saveLocal();
+    const step = guide();
+    if (firstGameStep !== null && !firstGameAllows(step, action)) {
+      error = step?.hint ?? "The walkthrough is complete.";
+      render();
+      return;
+    }
+    const guidedAction = step?.pay ? {...action, pay:step.pay} : action;
+    localMatch = act(updated, revealed, guidedAction);
+    if (firstGameStep !== null) {
+      if (step.type === "objectives") {
+        localMatch = act(localMatch,"Host",{type:"objectives",selected:localMatch.players.Host.offer.slice(0,2)});
+      }
+      firstGameStep++;
+      if (guide()?.site) {
+        focusedSite = guide().site;
+        boardOverview = false;
+      }
+    } else saveLocal();
     syncLocal();
     revealEndTurn();
   } catch (e) {
@@ -223,6 +247,7 @@ function lobby() {
       (mobileCatalog ? "" : button("Create private room","create",busy ? "disabled" : "","primary")) +
       '<label for="solo-difficulty">Bot difficulty</label><select id="solo-difficulty"><option value="normal">Normal</option><option value="hard">Hard</option></select>' +
       button("Play solo vs bot","startSolo",busy ? "disabled" : "","primary") +
+      button("My first game","startFirstGame",busy ? "disabled" : "") +
       '<hr><h2>Same device</h2><p class="meta">Take turns passing the screen. Hands and objectives are hidden at each handoff.</p>' +
       button("Pass & Play","startLocal",busy ? "disabled" : "","primary")) + err() + '</div></section>';
 }
@@ -402,13 +427,14 @@ function options(p, objective = false) {
 function decision() {
   if (game.status === "objectives") {
     if (!game.offer?.length) return '<div class="panel choice"><h2>Objectives locked</h2><p>Waiting for the other player to choose.</p></div>';
-    return '<div class="panel choice"><h2>Keep two secret objectives</h2>' + options({choices:game.offer}, true) +
+    return '<div class="panel choice"><h2>Keep two secret objectives</h2>' + (guide() ? '<p>' + safe(guide().hint) + '</p>' : "") + options({choices:game.offer}, true) +
       button("Keep selected","objective",selected.size !== 2 || busy ? "disabled" : "","primary") + '</div>';
   }
   const p = game.pending;
   if (!p) return "";
   if (p.f !== game.faction) return '<div class="panel choice"><h2>Awaiting response</h2><p>' + safe(p.prompt) + '</p></div>';
   if (p.kind === "bonus") {
+    if (guide()) return "";
     return '<div class="panel choice bonus-choice"><h2>Bonus play</h2><p>Select a legal card from your hand, or skip this bonus.</p>' +
       button("Skip bonus","skipBonus",busy ? "disabled" : "") + '</div>';
   }
@@ -501,6 +527,13 @@ function renderPublicPoints() {
 
 function render() {
   if (!data) return;
+  if (firstGameStep === firstGameSteps.length + 1) {
+    app.innerHTML = '<article class="game"><section class="panel tutorial-finish"><h1>You’re ready to play</h1>' +
+      '<p>The higher VP total wins. Check the synergies on both your cards and the sites, and remember your secret objectives.</p>' +
+      '<p>A real match ends when all 24 spaces are filled, either deck runs out, or one faction fills all six spaces at two sites.</p>' +
+      button("Back to lobby","exitFirstGame","","primary") + '</section></article>';
+    return;
+  }
   recordPlayedCards(libraryKey, localMatch?.playedPoints ?? game?.playedPoints);
   if (localMatch && !game) {
     const faction = nextPlayer(localMatch);
@@ -521,16 +554,22 @@ function render() {
   if (!game) { app.innerHTML = lobby(); return; }
   const waiting = game.status === "waiting";
   const inv = seat?.invite ? location.origin + "/#room=" + seat.code + "&invite=" + seat.invite : "";
-  const canEnd = game.status === "playing" && game.turn === game.faction && !game.pending && !busy;
+  const step = guide();
+  const guided = firstGameStep !== null;
+  const canEnd = game.status === "playing" && game.turn === game.faction && !game.pending && !busy && (!guided || step?.type === "end");
   const topDiscard = cardOf(game.discard.at(-1));
-  const canSpend = canEnd && game.actionRules && game.slots > 0;
+  const canSpend = game.status === "playing" && game.turn === game.faction && !game.pending &&
+    !busy && game.actionRules && game.slots > 0;
   const actionButtons = game.status === "playing" && game.actionRules && game.turn === game.faction ?
     button(game.focusedDraw && game.deckCount > 1 ? "Draw 2 cards" : "Draw 1 card","drawCard",
-      canSpend && game.deckCount ? "" : "disabled") +
-    button("Take top discard","takeDiscard",canSpend && topDiscard ? 'title="' + safe(topDiscard.name) + '"' : "disabled") : "";
+      canSpend && game.deckCount && (!guided || step?.type === "drawCard") ? "" : "disabled") +
+    button("Take top discard","takeDiscard",canSpend && topDiscard && (!guided || step?.type === "takeDiscard") ? 'title="' + safe(topDiscard.name) + '"' : "disabled") : "";
   const status = waiting ? "Waiting for your opponent" : game.status === "objectives" ? "Secret objective setup" :
     game.status === "finished" ? "Match complete" : game.turn === game.faction ? "Your turn" : other(game.faction) + "’s turn";
-  const summary = '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
+  const summary = guided ? '<div class="summary first-game-guide" role="status"><strong>My first game · ' +
+    (step ? (firstGameStep+1) + '/' + firstGameSteps.length : 'Tuck complete') + '</strong><p>' +
+    safe(step?.hint ?? "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.") + '</p></div>' :
+    '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
     localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
     '</span><h1>Infection board</h1></div><div class="badges">' + badge("You · " + game.faction,game.faction) +
     badge("Draw deck " + game.deckCount) + badge("Opponent hand " + game.opponentHandCount,other(game.faction)) +
@@ -541,9 +580,10 @@ function render() {
     (game.actionRules && topDiscard ? '<div class="meta discard-summary">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
     '</div>';
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
+    (guided && !step ? button("Finish walkthrough","finishFirstGame","","primary") : "") +
     actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
-    (localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
-    button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") + '</aside>';
+    (!guided && localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
+    button(guided ? "Exit walkthrough" : localMatch ? "Leave match" : "Leave this tab",guided ? "exitFirstGame" : "leave","","plain") + '</aside>';
   const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
     button("Copy link","copy") + '</div></div>' : "";
@@ -555,7 +595,7 @@ function render() {
     }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const previousBoard = app.querySelector(".board-focus");
-  const boardScroll = previousBoard?.scrollTop ?? null;
+  const boardScroll = previousBoard && previousBoard.dataset.guideStep === String(firstGameStep) ? previousBoard.scrollTop : null;
   const focused = document.activeElement?.dataset;
   const focusedAction = focused?.action, focusedId = focused?.id;
   const openedKey = app.querySelector(".match-key")?.open;
@@ -574,6 +614,7 @@ function render() {
       button("Close","closeCardPreview") + cardDetail() + '</dialog>' : '') + '</article>';
   const board = app.querySelector(".board-focus");
   if (board) {
+    board.dataset.guideStep = String(firstGameStep);
     const nodes = [...board.querySelectorAll("[data-board-site]")];
     const position = node => node.offsetTop;
     board.scrollTop = boardScroll ?? position(nodes.find(node => node.dataset.boardSite === focusedSite) ?? nodes[0]);
@@ -584,6 +625,14 @@ function render() {
       app.querySelectorAll('[data-action="siteView"]').forEach(tab =>
         tab.setAttribute("aria-pressed", String(tab.dataset.id === focusedSite)));
     }, {passive:true});
+  }
+  if (step) {
+    const selector = step.type === "play"
+      ? paymentMode && payment.size < step.pay.length
+        ? '[data-action="payHand"][data-id="' + step.pay.find(id => !payment.has(id)) + '"]'
+        : picked ? '[data-action="place"].legal' : '[data-action="previewHand"][data-id="' + step.card + '"]'
+      : '[data-action="' + (step.type === "objectives" ? "option" : step.type) + '"]';
+    app.querySelectorAll(selector).forEach(node => node.classList.add("guide-target"));
   }
   const preview = app.querySelector(".hand-preview");
   if (preview) {
@@ -667,6 +716,8 @@ app.addEventListener("drop", event => {
 function togglePayment(id) {
   const cost = game.legal[picked]?.cost;
   if (busy || !isPaymentCard(id) || !cost) return;
+  const expected = guide()?.pay;
+  if (expected && !payment.has(id) && id !== expected.find(card => !payment.has(card))) return;
   if (payment.has(id)) payment.delete(id);
   else if (payment.size < cost) payment.add(id);
   render();
@@ -729,6 +780,24 @@ app.addEventListener("click", async (event) => {
     localMatch = act(localMatch, null, {type:"rematch"});
     saveLocal();
     syncLocal();
+    return;
+  }
+  if (action === "startFirstGame") {
+    startFirstGame();
+    return;
+  }
+  if (action === "finishFirstGame" && firstGameStep === firstGameSteps.length) {
+    firstGameStep++;
+    render();
+    return;
+  }
+  if (action === "exitFirstGame") {
+    firstGameStep = null;
+    localMatch = game = revealed = inspect = handPreview = null;
+    sidePanel = null;
+    error = "";
+    history.replaceState(null,"","/");
+    render();
     return;
   }
   if (action === "startLocal" || action === "startSolo") {
@@ -798,10 +867,22 @@ app.addEventListener("click", async (event) => {
   }
 });
 
+function startFirstGame() {
+  firstGameStep = 0;
+  soloFaction = seat = null;
+  error = notice = "";
+  localMatch = createFirstGame(newGame, data);
+  boardOverview = false;
+  focusedSite = localMatch.board[0].id;
+  history.replaceState(null,"","/#first-game");
+  syncLocal();
+}
+
 try {
   data = mobileCatalog ?? await request("/api/cards");
   const mode = location.hash || (mobileCatalog ? localSaves.getItem(modeKey) : null);
-  if (mode === "#solo") {
+  if (mode === "#first-game") startFirstGame();
+  else if (mode === "#solo") {
     try {
       const savedSolo = JSON.parse(localSaves.getItem(soloKey));
       if (savedSolo?.match && ["Host","Bacteria"].includes(savedSolo.faction)) {

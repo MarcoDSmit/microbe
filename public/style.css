@@ -292,3 +292,12 @@ body:has(.match-screen) {background:#07121a url("/board-art/starfield.webp") cen
   .mobile-build .board .card-tray .slot .board-card-art {max-height:none}
   .mobile-build .hand-dock .public-points {min-height:1.55rem;padding-inline:.65rem}
 }
+
+.first-game-guide{display:block;color:#edf7ff;background:#10202b;border:1px solid #3b515e;border-radius:.4rem;padding:.3rem .5rem;font-size:.87rem}
+.first-game-guide p{line-height:1.3}
+.guide-target{outline:2px solid #eeb955;outline-offset:-2px}
+.tutorial-finish{display:grid;gap:.7rem}
+.tutorial-finish button{justify-self:start}
+@media (orientation:landscape) and (max-height:520px){
+  .mobile-build .match-screen .first-game-guide{font-size:.74rem}
+}
