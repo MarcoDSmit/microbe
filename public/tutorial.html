@@ -3,73 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Microbe Wars · Practice turn</title>
+  <title>Microbe Wars · Tutorial</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="preferences.js"></script>
-  <script type="module" src="tutorial.js"></script>
   <style>
-    main { max-width: 44rem; margin: 2rem auto; padding: 0 1rem 2rem; display: grid; gap: 1rem; }
-    .lesson { display: grid; gap: .7rem; }
-    .lesson button { justify-self: start; text-align: left; }
-    .lesson [role=status]:empty { display: none; }
-    .card-guide { display: grid; gap: 1rem; }
-    .guide-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 1rem; align-items: start; }
-    .guide-grid figure, .guide-grid dl { margin: 0; }
-    .guide-grid figcaption { margin-top: .35rem; }
-    .guide-grid h3 { margin-bottom: .5rem; }
-    .guide-grid dt { font-weight: 700; }
-    .guide-grid dd { margin: .2rem 0 .65rem; }
-    .guide-grid section + section { margin-top: 1rem; }
-    @media (max-width: 36rem) {
-      .guide-grid { grid-template-columns: 1fr; }
-      .guide-grid figure { max-width: 19rem; margin-inline: auto; }
-    }
-    .practice-links { display: flex; gap: 1rem; flex-wrap: wrap; }
+    main { max-width: 44rem; margin: auto; padding: clamp(.75rem, 4vw, 2rem); }
+    .tutorial { display: grid; gap: .8rem; }
+    .tutorial nav { display: flex; gap: 1rem; flex-wrap: wrap; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Practice a turn</h1>
-    <p>Read the card guide, then try the practice questions.</p>
-    <nav class="practice-links" aria-label="Rules links"><a href="#card-guide">Read a card</a><a href="#practice">Start practice</a><a href="glossary.html">Play glossary</a><a href="/">Game lobby</a></nav>
-    <section class="panel card-guide" id="card-guide" aria-labelledby="card-guide-title">
-      <h2 id="card-guide-title">How to read a playing card</h2>
-      <div class="guide-grid">
-        <figure>
-          <img class="card-art" src="card-art/B31.webp" alt="B31 Staphylococcus aureus MSSA. The heart is in O, six symbols including the blue square are in A, and R is blank. The Synergy box lists IV Site, Prosthetic Joint, Eye, and Middle Ear for +2 VP." width="750" height="1050">
-          <figcaption class="meta">B31 · Staphylococcus aureus — MSSA</figcaption>
-        </figure>
-        <div>
-          <section aria-labelledby="rail-guide">
-            <h3 id="rail-guide">O / A / R at the top</h3>
-            <p>Find the antibiotic’s symbol in the bacterium’s rail. The symbol identifies the drug. The letter tells you what the match does.</p>
-            <dl>
-              <dt>O · Optimal</dt>
-              <dd>The flucloxacillin heart on B31 allows a local tuck. An eligible on-play antibiotic can choose one distant Optimal target instead of its local attack.</dd>
-              <dt>A · Active</dt>
-              <dd>The vancomycin square on B31 allows a tuck at the same site only. Follow any limits on the antibiotic card.</dd>
-              <dt>R · Resistance</dt>
-              <dd>On B32 MRSA, the flucloxacillin heart is in R. It blocks the tuck. Playing the matching antibiotic at that site can trigger the printed reaction once per copy per game.</dd>
-              <dt>Symbol absent</dt>
-              <dd>That antibiotic has no matching tuck or R reaction against this card.</dd>
-            </dl>
-          </section>
-          <section aria-labelledby="synergy-guide">
-            <h3 id="synergy-guide">Synergy near the bottom</h3>
-            <p>B31 has <strong>4 base VP</strong> in the bottom-right badge. Its Synergy box adds <strong>+2 VP</strong> while it is visible at IV Site, Prosthetic Joint, Eye, or Middle Ear. A slash lists alternatives for one award. If a card has two separate conditions, both can score when met. The site’s own tag bonus can also apply.</p>
-          </section>
-        </div>
-      </div>
-    </section>
-    <section class="panel lesson" id="practice" aria-labelledby="lesson-title">
-      <p class="eyebrow" id="lesson-progress"></p>
-      <h2 id="lesson-title" tabindex="-1">Practice</h2>
-      <p id="lesson-prompt"></p>
-      <div class="choices" id="lesson-choices"></div>
-      <p id="lesson-feedback" role="status"></p>
-      <button class="primary" id="lesson-next" type="button" hidden>Continue</button>
-    </section>
-    <noscript>The <a href="glossary.html">glossary</a> works without the interactive practice.</noscript>
+    <article class="panel tutorial" aria-labelledby="tutorial-title">
+      <h1 id="tutorial-title">How to play</h1>
+      <p>Welcome to Microbe Wars. Play as Bacteria spreading across four infection sites, or as Host trying to contain them. Start by keeping two of your three secret objectives.</p>
+      <p>You get three actions each turn. Play a card, draw from your deck, or take the top card from your discard pile. To pay a card's cost, discard that many other cards from your hand.</p>
+      <p>To tuck a card, slide it beneath the card that tucked it. That frees up its space and takes it out of active play.</p>
+      <p>Match the antibiotic's symbol to the bacterium's rail. <strong>Active</strong> can tuck it at the same site. <strong>Optimal</strong> can tuck it locally or reach one distant target instead, when the antibiotic allows it. <strong>Resistance</strong> blocks the tuck and may trigger a reaction.</p>
+      <p>Check each card's synergy for bonus points. When the match ends, add up your card points, tuck points, territory, and secret objectives. The higher score wins.</p>
+      <nav aria-label="Game links">
+        <a href="/">Game lobby</a>
+        <a href="rules.html">Full rules</a>
+      </nav>
+    </article>
   </main>
 </body>
 </html>

@@ -6,7 +6,7 @@ A browser alpha for solo play or two human players. The lobby is open to anyone 
 
 Choose **Pass & Play** for two people on one device. Pass the device at each handoff screen, then the next player reveals their hand. The game also uses this screen for secret-objective setup and reactions that need the other player. Refreshing the same tab resumes behind the handoff screen. This mode runs in the browser after the game loads and uses the same rules as online play.
 
-Use **Tutorial** to practice the core decisions, **Glossary** to look up a term, and **Settings** for night mode and text size. Hand cards show their ability, synergy, cost and tags. **Inspect** opens a card's details. **Play** arms the card for placement. The six spaces in each site grid belong to that site. The match key explains the O, A and R strips on bacterial cards. Your private objectives show their point values and update as the board changes.
+Use **Tutorial** for a quick explanation of how to play, **Glossary** to look up a term, and **Settings** for night mode and text size. Hand cards show their ability, synergy, cost and tags. **Inspect** opens a card's details. **Play** arms the card for placement. The six spaces in each site grid belong to that site. The match key explains the O, A and R strips on bacterial cards. Your private objectives show their point values and update as the board changes.
 
 ### Play from separate devices
 
