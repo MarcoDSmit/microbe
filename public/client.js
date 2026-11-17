@@ -264,23 +264,18 @@ function cardDetail() {
           (requiredSite ? " Play the antibiotic at " + safe(siteName(requiredSite)) + "." : "") :
           safe(value[0] + value.slice(1).toLowerCase()) + " match. Check the ability and defenses.") : "No matching action.") + '</p>';
   }
-  const { ability, synergy } = printedCardCopy(card);
-  return '<div class="panel detail"><h2>' + safe(cardTitle(card)) + '</h2><p>' + safe(card.name) + '</p>' + cardArt(instance) +
-    strip(card) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
-    '<p class="meta">' + safe(cardTags(card).join(" · ") + " · cost " + printedCost(instance, game.hostBalance) +
-      " · base " + card.base + " VP" + tuckScoreLabel(card)) + '</p>' +
-    (ability ? ability.split("\n") : []).map(line => '<p>' + safe(line) + '</p>').join("") +
+  return '<div class="panel detail"><h2 class="sr-only">' + safe(card.name) + '</h2>' +
+    cardFace(card, instance) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
     ((card.id === "H39" && !game.board.some(s => s.id === "N02")) ||
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
       '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
-    (synergy ? '<p><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</p>' : "") +
     (onBoard?.antibioticTuck ? '<p><b>Antibiotic tuck</b> · ' +
       (onBoard.antibioticTuck.match === "OPTIMAL" ? "Optimal" : "Active") +
       (onBoard.antibioticTuck.remote ? " · from another site" : " · local") + '</p>' : "") +
     (onBoard?.usedResistanceMatch ? '<p><b>R match triggered</b></p>' : "") +
     (game.spentReactions?.[instance] ? '<p><b>Antibiotic reaction spent</b></p>' : '') +
     (onBoard?.tucked.length ? '<h3>Tucked beneath</h3>' + inspectList(onBoard.tucked.map(o => o.id)) : "") +
-    match + '<small class="card-id">' + safe(card.id + (game.actionRules ? copyLabel(instance) : "")) + '</small></div>';
+    match + '</div>';
 }
 
 function inspectList(ids) {
@@ -308,11 +303,11 @@ function renderBoard() {
       if (piece) {
         const c = cardOf(piece.id);
         return '<button class="slot ' + c.faction.toLowerCase() + '" data-action="inspect" data-id="' + piece.id +
-          '" title="' + safe(c.name) + '">' + cardArt(piece.id,"board-card-art") + strip(c,true) + '<span class="slot-name">' + safe(cardTitle(c)) +
-          '</span><span class="slot-note">' + safe(cardTags(c,true).join(" · ")) + '</span>' +
+          '" title="' + safe(c.name) + '">' + cardArt(piece.id,"board-card-art") + strip(c,true) + '<span class="sr-only">' + safe(cardTitle(c)) +
+          '</span><span class="sr-only">' + safe(cardTags(c,true).join(" · ")) + '</span>' +
           (piece.tucked.length ? '<span class="slot-note">' + piece.tucked.length + ' tucked</span>' : "") +
           (game.spentReactions?.[piece.id] ? '<span class="slot-note">Reaction spent</span>' : '') +
-          '<span class="card-id">' + safe(c.id) + '</span></button>';
+          '</button>';
       }
       const legal = ready && available.sites.includes(site.id);
       return '<button class="slot empty ' + (legal ? "legal" : "") + '" data-action="place" data-site="' + site.id +
@@ -337,18 +332,26 @@ function renderBoard() {
 }
 
 const objectiveValue = (g) => g.vp + (g.per ? " VP per qualifying entry" : " VP if met");
+function objectiveFace(goal) {
+  return cardArt(goal.id) + '<span class="sr-only">' +
+    safe(goal.name + ". " + objectiveValue(goal) + ". " + goal.text) + '</span>';
+}
+
 function cardFace(card, id, effectiveCost) {
   const { ability, synergy } = printedCardCopy(card);
   const cost = printedCost(id, game.hostBalance);
   const variant = card.name.split(" — ")[1];
+  const gram = card.faction === "Bacteria" && ["Positive","Negative","Variable"].includes(card.gram) ?
+    "Gram-" + card.gram.toLowerCase() : "";
   return cardArt(id) + '<span class="sr-only">' + strip(card) + '<span class="card-head"><strong>' + safe(cardTitle(card)) + '</strong>' +
     '<span class="cost" aria-label="Printed cost ' + cost + '">' + cost + '</span></span>' +
     (variant ? '<span class="card-variant">' + safe(variant) + '</span>' : '') +
-    '<span class="card-tags">' + safe(cardTags(card).join(" · ")) + '</span><span class="card-stats">' +
+    '<span class="card-tags">' + safe(cardTags(card).filter(tag => tag !== gram).join(" · ")) + '</span><span class="card-stats">' +
     card.base + ' base VP' + tuckScoreLabel(card) +
     '</span>' +
     (ability ? ability.split("\n") : []).map(line => '<span class="card-rule">' + safe(line) + '</span>').join("") +
     (synergy ? '<span class="card-rule"><b>Synergy</b> · ' + safe(synergy.split("\n").join(" · ")) + '</span>' : "") + '</span>' +
+    (gram ? '<span class="card-stats">' + safe(gram) + '</span>' : '') +
     (effectiveCost != null && effectiveCost !== cost ? '<span class="card-stats">' + effectiveCost + ' to play now</span>' : "");
 }
 
@@ -362,9 +365,8 @@ function options(p, objective = false) {
       game.board.find((site) => site.slots.some((piece) => piece?.id === id));
     return '<button type="button" class="choice-option ' + (g ? "goal-choice " : c ? "choice-card " + c.faction.toLowerCase() + " " : "") +
       (selected.has(id) ? "picked" : "") + '" data-action="option" data-id="' + safe(id) + '" aria-pressed="' +
-      selected.has(id) + '">' + (c ? cardFace(c,id) + '<small class="card-id">' +
-        safe(c.id + (game.actionRules ? copyLabel(id) : "")) + '</small>' : safe(name)) + (g ? cardArt(id) + '<small><strong>' + safe(objectiveValue(g)) + '</strong><br>' +
-      safe(g.text) + '</small>' : targetSite ? '<small>' + safe(siteName(targetSite.id)) + '</small>' : "") + '</button>';
+      selected.has(id) + '">' + (g ? objectiveFace(g) : c ? cardFace(c,id) +
+        (game.actionRules ? '<span class="sr-only">' + safe(copyLabel(id)) + '</span>' : '') : safe(name)) + (targetSite ? '<small>' + safe(siteName(targetSite.id)) + '</small>' : "") + '</button>';
   }).join("") + '</div>';
 }
 function decision() {
@@ -437,7 +439,7 @@ function renderHandPreview() {
   return '<dialog class="hand-preview" aria-labelledby="hand-preview-title"><div class="preview-card">' +
     '<div class="card-controls">' + button("Close","closeHandPreview","","secondary") +
     (legal && !busy && !paymentMode ? button("Play this card","prepare",'data-id="' + safe(handPreview) + '"',"primary") : "") +
-    '</div><h2 id="hand-preview-title">' + safe(card.name) + '</h2>' +
+    '</div><h2 class="sr-only" id="hand-preview-title">' + safe(card.name) + '</h2>' +
     (legal && legal.cost !== printedCost(handPreview, game.hostBalance) ?
       '<p class="meta">' + legal.cost + ' to play now</p>' : '') + cardFace(card,handPreview) + '</div></dialog>';
 }
@@ -527,8 +529,7 @@ function render() {
   const objectives = '<div class="panel detail"><h2>Your objectives</h2>' +
     (game.goals.length ? game.goals.map((id) => {
       const goal = data.goals[id], points = game.objectivePoints?.[id] ?? 0;
-      return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '"><h3>' + safe(goal.name) +
-        '</h3>' + cardArt(id) + '<p><b>' + safe(objectiveValue(goal)) + '</b></p><p>' + safe(goal.text) + '</p><p class="objective-status">' +
+      return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '">' + objectiveFace(goal) + '<p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const played = (game.playedPoints ?? []).slice().reverse();

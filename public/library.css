@@ -21,3 +21,5 @@
 #card-inspector::backdrop { background: #081713b3; }
 #close-inspector { margin-bottom: .6rem; }
 #card-inspector h2 { font-size: 1.65rem; }
+
+.library-inspect:has(.card-art){display:block;width:100%}

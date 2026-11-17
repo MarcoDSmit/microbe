@@ -92,13 +92,20 @@ function render() {
 function cardFace(card, expandable) {
     const article = document.createElement("article");
     article.className = "panel library-card";
+    const hasArt = card.group === "Objective" || (card.cost != null && !card.replacementId);
     if (expandable && card.number && !played.has(card.id)) article.classList.add("unplayed");
-    appendText(article, "small", [card.number && String(card.number).padStart(2,"0"), card.id, card.group, card.type,
+    if (!hasArt || card.group === "Objective") appendText(article, "small", [card.number && String(card.number).padStart(2,"0"), card.id, card.group, card.type,
       card.group === "Objective" ? card.faction : ""].filter(Boolean).join(" · "));
     const title = document.createElement("h2");
     article.append(title);
+    let imageTarget = article;
     if (expandable) {
-      const button = appendText(title, "button", card.name);
+      const button = document.createElement("button");
+      if (hasArt) {
+        button.setAttribute("aria-label", card.name);
+        imageTarget = button;
+      } else button.textContent = card.name;
+      title.append(button);
       button.type = "button";
       button.className = "library-inspect";
       button.setAttribute("aria-haspopup", "dialog");
@@ -108,8 +115,11 @@ function cardFace(card, expandable) {
         inspectedCard.replaceChildren(cardFace(card, false));
         inspector.showModal();
       });
-    } else title.textContent = card.name;
-    if (card.group === "Objective" || (card.cost != null && !card.replacementId)) {
+    } else {
+      title.textContent = card.name;
+      if (hasArt) title.className = "sr-only";
+    }
+    if (hasArt) {
       const art = document.createElement("img");
       art.className = "card-art";
       art.src = cardArtUrl(card.id);
@@ -118,22 +128,27 @@ function cardFace(card, expandable) {
       art.height = 1050;
       art.loading = "lazy";
       art.decoding = "async";
-      article.append(art);
+      imageTarget.append(art);
     }
-    appendText(article, "p", card.identity !== card.name ? card.identity : "");
+    const text = hasArt ? document.createElement("div") : article;
+    if (hasArt) {
+      text.className = "sr-only";
+      article.append(text);
+    }
+    appendText(text, "p", card.identity !== card.name ? card.identity : "");
     if (card.cost != null) {
       if (card.number) appendText(article, "span", played.has(card.id) ? "Played this session" : "Unplayed this session").className = "library-played";
-      appendText(article, "small", `Cost ${card.cost} · ${card.base} base VP${tuckScoreLabel(card)}`);
+      appendText(text, "small", `Cost ${card.cost} · ${card.base} base VP${tuckScoreLabel(card)}`);
       if (card.copies === 0) appendText(article, "p", "Reserve · Outside the draw deck");
-      appendText(article, "p", [card.gram && card.gram !== "N/A" && "Gram-" + card.gram.toLowerCase(),
+      appendText(text, "p", [card.gram && card.gram !== "N/A" && "Gram-" + card.gram.toLowerCase(),
         card.route !== "N/A" && card.route, ...card.tags.map(tag => tag.replaceAll("_", " "))].filter(Boolean).join(" · "));
-      appendText(article, "small", card.timing?.replaceAll("_", " ").toLowerCase());
+      appendText(text, "small", card.timing?.replaceAll("_", " ").toLowerCase());
       const strips = card.group === "Bacteria"
         ? [["Optimal",card.optimal],["Active",card.active],["Resistance",card.resist]]
         : [["Antibiotic symbol",card.mark && (card.rail || card.replacementId) ? [card.mark] : []]];
       for (const [label,symbols] of strips) {
         if (!symbols?.length) continue;
-        const row = appendText(article, "div", label);
+        const row = appendText(text, "div", label);
         row.className = "library-spectrum";
         for (const symbol of symbols) {
           const glyph = matchGlyphs[symbol];
@@ -146,10 +161,10 @@ function cardFace(card, expandable) {
         }
       }
     }
-    if (card.vp != null) appendText(article, "small", `${card.vp} VP${card.per ? " per qualifying item" : ""}`);
-    appendText(article, "strong", card.abilityName);
+    if (card.vp != null) appendText(text, "small", `${card.vp} VP${card.per ? " per qualifying item" : ""}`);
+    appendText(text, "strong", card.abilityName);
     const { ability, synergy } = card.replacementId ? card : printedCardCopy(card);
-    for (const line of [ability, synergy && "Synergy · " + synergy.split("\n").join(" · "), card.power, card.bacteriaSynergy, card.hostSynergy, card.text]) appendText(article, "p", line);
+    for (const line of [ability, synergy && "Synergy · " + synergy.split("\n").join(" · "), card.power, card.bacteriaSynergy, card.hostSynergy, card.text]) appendText(text, "p", line);
     if (card.replacementId) {
       appendText(article, "p", "Replaced by " + card.replacementId + " · " + card.replacement);
       appendText(article, "p", card.reason);
