@@ -343,3 +343,59 @@ body:has(.match-screen) {background:#07121a url("/board-art/starfield.webp") cen
 .tutorial-exit{display:inline-flex;align-items:center;justify-content:center;min-height:2.4rem;white-space:nowrap}
 .guide-heading .tutorial-exit{padding:.24rem .6rem}
 .guided-match>.choice{grid-row:2;grid-column:1/-1}
+
+body:has(.lunar-lobby) {background:#07121a}
+body:has(.lunar-lobby) .masthead {background:#101c26;border-color:#334955}
+body:has(.lunar-lobby) :is(.brand,.utility) {color:#eff7ff}
+.lunar-lobby {
+  max-width:none;margin:0;min-height:calc(100dvh - 62px);padding:clamp(.65rem,2vw,2rem);
+  grid-template-columns:minmax(18rem,33%) minmax(0,1fr);gap:0;
+  background:#07121a url("/board-art/lunar-lobby.webp") center right / cover no-repeat;
+}
+.lunar-console {
+  align-self:center;gap:.65rem;padding:clamp(.8rem,2vw,1.8rem);
+  color:#fff3df;background:linear-gradient(145deg,#18252cf5,#090f16f5);
+  border:1px solid #728490;border-radius:.7rem;box-shadow:0 0 0 2px #08121b,0 1rem 2rem #0008;
+}
+.lunar-console .welcome-brand {flex-direction:row-reverse;max-width:21rem}
+.lunar-console p {color:#d2e2ed;font-size:.89rem;max-width:none}
+.lunar-intro {border-block:1px solid #577c89;padding:.5rem 0}
+.lunar-intro h2 {font-size:clamp(1.2rem,2.45vw,2.15rem);text-transform:uppercase;margin-bottom:.22rem}
+.lobby-options {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.4rem}
+.lobby-options label {font-size:.76rem;font-weight:700;color:#edf5fc}
+.lobby-options select {
+  display:block;min-width:0;width:100%;min-height:2.75rem;padding:.1rem .3rem;
+  background:#10232e;color:#f4f7fa;border:1px solid #6a8796;border-radius:.35rem
+}
+.lobby-modes {display:grid;gap:.32rem}
+.lunar-console .lobby-mode {
+  width:100%;min-height:2.75rem;padding:.32rem .55rem;border:0;border-radius:.35rem;
+  color:#fff6e6;background:#12202a url("/board-art/score-banner.webp") center / 100% 100% no-repeat;
+  font-size:.9rem;font-weight:800;line-height:1.15;text-transform:uppercase;text-shadow:0 1px 2px #000;
+}
+.lunar-console .lobby-mode.art-button {padding:0;background:none}
+.lunar-console .lobby-mode img {height:2.75rem;object-fit:fill}
+.lunar-console .art-button-label {font-size:inherit}
+.lunar-console .lobby-mode:hover:not(:disabled) {filter:brightness(1.16)}
+@media (orientation:landscape) and (max-height:520px) {
+  body:has(.lunar-lobby) .masthead {min-height:2.4rem;padding:0 .65rem}
+  .lunar-lobby {min-height:calc(100dvh - 2.4rem);padding:.4rem .6rem;grid-template-columns:minmax(16rem,34%) minmax(0,1fr)}
+  .lunar-console {gap:.35rem;padding:.5rem .65rem}
+  .lunar-console .welcome-brand {width:min(100%,12rem)}
+  .lunar-intro {padding:.24rem 0}
+  .lunar-intro h2 {font-size:1rem;margin-bottom:.12rem}
+  .lunar-intro p {font-size:.73rem;line-height:1.15}
+  .lobby-options select {min-height:2rem;font-size:.85rem}
+  .lobby-modes {gap:.22rem}
+  .lunar-console .lobby-mode {min-height:2.35rem;font-size:.81rem}
+  .lunar-console .lobby-mode img {height:2.35rem}
+}
+@media (orientation:portrait) and (max-width:680px) {
+  .lunar-lobby {
+    grid-template-columns:minmax(0,1fr);align-content:end;
+    padding:clamp(8rem,34vw,13rem) .7rem max(.8rem,env(safe-area-inset-bottom));
+    background-position:75% top;background-size:auto clamp(20rem,62vh,32rem);
+  }
+  .lunar-console {width:min(100%,32rem);justify-self:center}
+  .lunar-console .welcome-brand {width:min(100%,18rem)}
+}

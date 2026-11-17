@@ -55,6 +55,8 @@ const buttonArt = new Map([
 ]);
 const buttonFrames = new Map([
   ["prepare", "play-frame"],
+  ["startSolo", "play-frame"],
+  ["join", "confirm-frame"],
   ["confirmDrop", "play-frame"],
   ["objective", "confirm-frame"],
   ["Confirm choice", "confirm-frame"],
@@ -241,21 +243,22 @@ function welcomeBrand() {
 
 function lobby() {
   const joining = !mobileCatalog && Boolean(incoming.invite && incoming.code);
-  const map = Array.from({length:4}, () => '<div class="sample-node">' + '<span></span>'.repeat(6) + '</div>').join("");
-  return '<section class="lobby"><div class="lobby-copy"><span class="eyebrow">Field lab · two players</span>' +
-    '<h1>' + welcomeBrand() + '</h1><p>Build a foothold as Bacteria or clear infection sites as Host. ' +
-    (mobileCatalog ? "Play Solo or Pass &amp; Play on this device." : "Play on one device or invite an opponent.") + '</p>' +
-    '<div class="sample-map" aria-hidden="true">' + map + '</div></div><div class="panel lobby-panel">' +
-    (joining ? '<h2>Join a match</h2><p>You have an invitation to room <strong>' + safe(incoming.code) + '</strong>.</p>' +
-      button("Take the open seat","join",busy ? "disabled" : "","primary") :
-      (mobileCatalog ? '<h2>Play solo</h2>' : '<h2>Create a match</h2><p class="meta">Each player gets a private six-card hand.</p>') +
-      '<label for="faction">Your faction</label><select id="faction"><option>Bacteria</option><option>Host</option></select>' +
-      (mobileCatalog ? "" : button("Create private room","create",busy ? "disabled" : "","primary")) +
-      '<label for="solo-difficulty">Bot difficulty</label><select id="solo-difficulty"><option value="normal">Normal</option><option value="hard">Hard</option></select>' +
-      button("Play solo vs bot","startSolo",busy ? "disabled" : "","primary") +
-      button("My first game","startFirstGame",busy ? "disabled" : "") +
-      '<hr><h2>Same device</h2><p class="meta">Take turns passing the screen. Hands and objectives are hidden at each handoff.</p>' +
-      button("Pass & Play","startLocal",busy ? "disabled" : "","primary")) + err() + '</div></section>';
+  const modeButton = (label, action) => button(label, action, busy ? "disabled" : "", "lobby-mode");
+  const modes = joining ?
+    '<h2>Join a match</h2><p>You have an invitation to room <strong>' + safe(incoming.code) + '</strong>.</p>' +
+    modeButton("Take the open seat", "join") :
+    '<div class="lobby-options"><label for="faction">Your faction' +
+    '<select id="faction"><option>Bacteria</option><option>Host</option></select></label>' +
+    '<label for="solo-difficulty">Bot difficulty<select id="solo-difficulty">' +
+    '<option value="normal">Normal</option><option value="hard">Hard</option></select></label></div>' +
+    '<div class="lobby-modes" aria-label="Game modes">' +
+    modeButton("Play solo vs bot", "startSolo") + modeButton("Pass & Play", "startLocal") +
+    (mobileCatalog ? "" : modeButton("Create private room", "create")) +
+    modeButton("My first game", "startFirstGame") + '</div>';
+  return '<section class="lobby lunar-lobby"><div class="lobby-copy lunar-console">' +
+    '<h1>' + welcomeBrand() + '</h1><div class="lunar-intro"><h2>One board. Two factions.</h2>' +
+    '<p>Build a foothold as Bacteria or clear infection sites as Host.</p></div>' +
+    modes + err() + '</div></section>';
 }
 const cardTitle = (c) => c.faction === "Bacteria" ? c.identity : c.name.split(" — ")[0];
 const tagNames = { hospital:"Hospital-associated", uropathogen:"Uropathogen", skin_flora:"Skin flora",
