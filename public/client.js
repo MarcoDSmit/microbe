@@ -337,7 +337,9 @@ function renderBoard() {
       return '<button class="slot empty ' + (legal ? "legal" : "") + '" data-action="place" data-site="' + site.id +
         '" data-slot="' + i + '" aria-label="' + safe(info.name + ", space " + (i+1)) + '" ' +
         (legal ? "" : 'aria-disabled="true" tabindex="-1"') + '>' + (legal ? "Play here" : "—") + '</button>';
-    }).join("");
+    });
+    const trays = [cells.slice(0, 3), cells.slice(3, 6)].map(row =>
+      '<div class="card-tray"><div class="grid">' + row.join("") + '</div></div>').join("");
     const tuckSpace = occupied.length === 6 && site.slots.length === 6 &&
       Object.values(game.legal).some(play => play.sites.includes(site.id));
     const tuckReady = ready && available.sites.includes(site.id);
@@ -348,8 +350,12 @@ function renderBoard() {
       (b > h ? "Bacteria" : "Host") + (Math.max(b,h) === 6 ? " full control" : " majority");
     const points = game.sitePoints?.[site.id];
     const scoreLine = points ? '<p class="site-points">Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</p>' : '';
+    const siteFace = boardOverview ? "" : '<img class="site-face" src="/board-art/' +
+      safe(site.id) + '.webp" width="960" height="320" alt="">';
+    const overflow = cells.length > 6 ? '<div class="grid extra-card-slots">' + cells.slice(6).join("") + '</div>' : "";
     return '<section class="node" data-board-site="' + safe(site.id) + '"><div class="node-title"><h3>' + safe(info.name) + '</h3><span class="slot-note">' +
-      control + ' · ' + occupied.length + '/6</span></div>' + scoreLine + '<div class="grid">' + cells + '</div>' + extraSpace + '<details><summary>Site boon &amp; scoring</summary><small>' +
+      control + ' · ' + occupied.length + '/6</span></div>' + scoreLine + siteFace +
+      '<div class="site-trays">' + trays + '</div>' + overflow + extraSpace + '<details><summary>Site boon &amp; scoring</summary><small>' +
       safe(game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power) + '</small><small>Majority +3 VP · Full control +5 VP</small><small>' +
       safe(info.bacteriaSynergy) + '<br>' + safe(info.hostSynergy) + '</small></details></section>';
   }).join("") + '</div>';
