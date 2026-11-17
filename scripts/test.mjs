@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import data from "../worker/data.json" with { type: "json" };
-import { act, matchReplay, newGame, view } from "../worker/game.js";
+import { act, matchReplay, newGame, score, view } from "../worker/game.js";
 import { api } from "../worker/api.js";
 import { nextPlayer, passPlayView } from "../public/pass-play.js";
 import { tuckScoreLabel } from "../public/card-display.js";
@@ -617,7 +617,7 @@ for (const hardFaction of ["Bacteria", "Host"]) {
     for (let step = 0; match.status !== "finished" && step < 1000; step++) {
       const side = nextPlayer(match), state = view(match, side);
       const normal = chooseBotMove(state, data);
-      const action = side === hardFaction ? chooseHardMove(state, data) : normal;
+      const action = side === hardFaction ? chooseHardMove(state, data, score) : normal;
       if (JSON.stringify(action) !== JSON.stringify(normal)) hardDecisions++;
       act(match, side, action);
     }

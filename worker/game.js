@@ -676,7 +676,7 @@ function cardSynergy(s, f, o, own) {
   }
   return vp;
 }
-function score(s, f) {
+export function score(s, f) {
   const own = visible(s, f);
   const base = own.reduce((n, o) => n + cards[o.id].base, 0);
   const synergy = own.reduce((n, o) => n + cardSynergy(s, f, o, own), 0);

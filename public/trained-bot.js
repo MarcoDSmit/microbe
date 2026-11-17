@@ -56,9 +56,50 @@ export function choose(moves, weights) {
   return best.action;
 }
 
-export function chooseHardMove(game, data) {
-  if (game.status === "playing" && !game.pending && game.slots > 0) {
-    return choose(candidates(game, data), weights[game.faction]);
-  }
-  return chooseBotMove(game, data);
+// The offline Bot Lab preset: VP 1, synergy 1, boon 2, objective 1.
+const boonUtility = {
+  draw:1, extraPlay:.8, discount:.55, rebate:.55, tuckDraw:.45, retrieve:.42,
+  focusedDraw:.35, digest:.32, tradeDraw:.3, recirculate:.28, relocate:.22, survey:.17
+};
+const tacticalTerms = [1,2,3,4,5,10,11,12,13,14,15,16];
+const boonControl = (allies, rivals) => allies >= 3 && allies > rivals ? 1 :
+  allies === 2 && rivals <= 2 ? .2 : 0;
+
+export function chooseHardMove(game, data, score) {
+  if (game.status !== "playing" || game.pending || game.slots <= 0) return chooseBotMove(game, data);
+
+  const faction = game.faction;
+  const rival = faction === "Host" ? "Bacteria" : "Host";
+  // Project a placement from the acting player's view, with only their objectives.
+  const state = {board:game.board, players:{
+    [faction]:{goals:game.goals}, [rival]:{goals:[]}
+  }};
+  const own = score(state, faction);
+  const other = score(state, rival);
+  const freeSlots = game.board.reduce((sum, site) => sum + site.slots.filter(slot => slot === null).length, 0);
+  const horizon = Math.min(3, Math.max(0, (freeSlots - 1) / 6));
+  const ranked = candidates(game, data).map(({action, features}) => {
+    const fixed = tacticalTerms.reduce((sum, i) => sum + features[i] * weights[faction][i], 0);
+    if (action.type !== "play") return {action, features:[fixed]};
+    const original = game.board.find(site => site.id === action.site);
+    const slots = [...original.slots];
+    slots[action.slot] = {id:action.card, tucked:[]};
+    const placed = {...original, slots};
+    const projected = {...state, board:game.board.map(site => site === original ? placed : site)};
+    const afterOwn = score(projected, faction);
+    const afterRival = score(projected, rival);
+    const vp = afterOwn.base - own.base + afterOwn.territory - own.territory -
+      (afterRival.base - other.base + afterRival.territory - other.territory);
+    const synergy = afterOwn.synergy - own.synergy - (afterRival.synergy - other.synergy);
+    const objective = afterOwn.objective - own.objective;
+    const rule = data.sites.find(site => site.id === action.site);
+    const boon = game.uniqueSiteBoons ? rule.boon : rule.legacyBoon ?? rule.boon;
+    const allies = original.slots.filter(piece => piece && data.cards[piece.id.split(":")[0]].faction === faction).length;
+    const rivals = original.slots.filter(Boolean).length - allies;
+    const powerBefore = boonControl(allies, rivals) - boonControl(rivals, allies);
+    const powerAfter = boonControl(allies + 1, rivals) - boonControl(rivals, allies + 1);
+    const boonValue = (powerAfter - powerBefore) * (boonUtility[boon] ?? 0) * horizon;
+    return {action, features:[fixed, vp, synergy, boonValue * 2, objective]};
+  });
+  return choose(ranked, [1,1,1,1,1]);
 }

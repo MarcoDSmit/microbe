@@ -1,4 +1,4 @@
-import { act, canReachOptimal, matchReplay, newGame, printedCost, view } from "/local-rules.js";
+import { act, canReachOptimal, matchReplay, newGame, printedCost, score, view } from "/local-rules.js";
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
@@ -149,7 +149,7 @@ function playBot() {
   try {
     const updated = structuredClone(localMatch);
     const chooseMove = soloDifficulty === "hard" ? chooseHardMove : chooseBotMove;
-    localMatch = act(updated, faction, chooseMove(view(updated, faction), data));
+    localMatch = act(updated, faction, chooseMove(view(updated, faction), data, score));
     saveLocal();
     syncLocal();
     revealEndTurn();
