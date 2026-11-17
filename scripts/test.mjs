@@ -655,6 +655,7 @@ for (const step of firstGameSteps.slice(1)) {
 }
 assert.equal(guided.board[1].slots[1].tucked[0].id,"B32");
 assert.equal(guided.board[1].slots[1].tucked[0].antibioticTuck.match,"OPTIMAL");
+assert.deepEqual(guided.playedPoints.map(play => play.tucked), [false, false, true]);
 assert.equal(score(guided,"Host").tuck,1);
 console.log("Verified the fixed tutorial from objective selection to the vancomycin tuck.");
 

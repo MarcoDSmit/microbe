@@ -538,7 +538,10 @@ function renderPublicPoints() {
 
 function render() {
   if (!data) return;
-  updateGameAudio(localMatch?.status ?? game?.status ?? (incoming.invite ? "invite" : "lobby"));
+  updateGameAudio(
+    firstGameStep !== null ? "tutorial" : localMatch?.status ?? game?.status ?? (incoming.invite ? "invite" : "lobby"),
+    localMatch?.playedPoints ?? game?.playedPoints ?? [],
+  );
   document.documentElement.classList.toggle("first-game-active", firstGameStep !== null && firstGameStep <= firstGameSteps.length);
   if (firstGameStep === firstGameSteps.length + 1) {
     app.innerHTML = '<article class="game"><section class="panel tutorial-finish"><h1>You’re ready to play</h1>' +

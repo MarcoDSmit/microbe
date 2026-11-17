@@ -98,6 +98,8 @@ function take(s, captor, target, remote = false) {
   }
   a.piece.tucked.push(b.piece);
   b.site.slots[b.index] = null;
+  const play = s.queue.find((job) => job.kind === "recordPlay" && job.id === captor);
+  if (play) play.tucked = true;
   log(s, cards[target].name + " tucked beneath " + cards[captor].name + ".");
   if (s.sitePerks?.tuckDraw && cards[captor].faction === s.turn && cards[target].faction !== s.turn) {
     s.sitePerks.tuckDraw = false;
@@ -361,7 +363,7 @@ function pump(s) {
         const points = card ? cards[job.id].base + cardSynergy(s, job.f, card, own) +
           cards[job.id].tuck * card.tucked.length : 0;
         (s.playedPoints ??= []).push({id:job.id, faction:job.f, site:entry?.site.id ?? job.site,
-          turn:s.turnNumber, points});
+          turn:s.turnNumber, points, tucked:job.tucked ?? false});
         break;
       }
       case "finish": finishTurn(s); break;
