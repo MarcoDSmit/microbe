@@ -29,7 +29,7 @@ let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
 let handPreview = null, focusedSite = null, boardOverview = false;
 let localMatch = null, revealed = null;
-let firstGameStep = null;
+let firstGameStep = null, guideTuckSeen = false;
 const guide = () => firstGameStep === null ? null : firstGameSteps[firstGameStep];
 let soloFaction = null, soloDifficulty = "normal", botTimer;
 const soloLabel = () => soloDifficulty === "hard" ? "Solo vs bot · Hard" : "Solo vs bot";
@@ -229,6 +229,7 @@ function move(action) {
 }
 
 function revealEndTurn() {
+  if (firstGameStep !== null) return;
   if (game?.status !== "playing" || game.turn !== game.faction || game.pending || game.slots > 0) return;
   app.querySelector('[data-action="end"]:enabled')?.scrollIntoView({block:"center"});
 }
@@ -346,7 +347,7 @@ function renderBoard() {
     '<p>Find the antibiotic’s symbol on the bacterium. <b>Optimal (O)</b> qualifies for a local tuck or a single distant tuck instead of the on-play local attack. ' +
     '<b>Active (A)</b> qualifies for a local tuck. <b>Resistance (R)</b> blocks the tuck. In new matches, playing the matching antibiotic here can give Bacteria a once-per-copy reaction. ' +
     'A symbol absent from all three rows gives no tuck. Follow any limits printed on the card.</p></details>' +
-    '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' + game.board.map((site) => {
+    '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' + game.board.filter(site => firstGameStep === null || site.id === focusedSite).map((site) => {
     const occupied = site.slots.slice(0,6).filter(Boolean), b = occupied.filter((o) => cardOf(o.id).faction === "Bacteria").length;
     const h = occupied.length-b;
     const info = data.sites.find((s) => s.id === site.id);
@@ -527,6 +528,7 @@ function renderPublicPoints() {
 
 function render() {
   if (!data) return;
+  document.documentElement.classList.toggle("first-game-active", firstGameStep !== null && firstGameStep <= firstGameSteps.length);
   if (firstGameStep === firstGameSteps.length + 1) {
     app.innerHTML = '<article class="game"><section class="panel tutorial-finish"><h1>You’re ready to play</h1>' +
       '<p>The higher VP total wins. Check the synergies on both your cards and the sites, and remember your secret objectives.</p>' +
@@ -568,7 +570,7 @@ function render() {
     game.status === "finished" ? "Match complete" : game.turn === game.faction ? "Your turn" : other(game.faction) + "’s turn";
   const summary = guided ? '<div class="summary first-game-guide" role="status"><strong>My first game · ' +
     (step ? (firstGameStep+1) + '/' + firstGameSteps.length : 'Tuck complete') + '</strong><p>' +
-    safe(step?.hint ?? "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.") + '</p></div>' :
+    safe(step?.hint ?? (guideTuckSeen ? "The tucked MRSA adds 1 VP. Finish the walkthrough to see how a full match ends." : "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.")) + '</p></div>' :
     '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
     localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
     '</span><h1>Infection board</h1></div><div class="badges">' + badge("You · " + game.faction,game.faction) +
@@ -601,7 +603,7 @@ function render() {
   const openedKey = app.querySelector(".match-key")?.open;
   const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
-  app.innerHTML = '<article class="game match-screen">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
+  app.innerHTML = '<article class="game match-screen' + (guided ? ' guided-match' : '') + '">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
     invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
     [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
@@ -613,7 +615,7 @@ function render() {
     (inspect ? '<dialog class="hand-preview inspected-card-preview" aria-label="Card details">' +
       button("Close","closeCardPreview") + cardDetail() + '</dialog>' : '') + '</article>';
   const board = app.querySelector(".board-focus");
-  if (board) {
+  if (board && !guided) {
     board.dataset.guideStep = String(firstGameStep);
     const nodes = [...board.querySelectorAll("[data-board-site]")];
     const position = node => node.offsetTop;
@@ -626,13 +628,11 @@ function render() {
         tab.setAttribute("aria-pressed", String(tab.dataset.id === focusedSite)));
     }, {passive:true});
   }
-  if (step) {
-    const selector = step.type === "play"
-      ? paymentMode && payment.size < step.pay.length
-        ? '[data-action="payHand"][data-id="' + step.pay.find(id => !payment.has(id)) + '"]'
-        : picked ? '[data-action="place"].legal' : '[data-action="previewHand"][data-id="' + step.card + '"]'
-      : '[data-action="' + (step.type === "objectives" ? "option" : step.type) + '"]';
-    app.querySelectorAll(selector).forEach(node => node.classList.add("guide-target"));
+  if (guided) {
+    for (const node of app.querySelectorAll("button[data-action]")) {
+      if (!firstGameControlAllowed(node)) node.disabled = true;
+      else if (!node.disabled && node.dataset.action !== "exitFirstGame") node.classList.add("guide-target");
+    }
   }
   const preview = app.querySelector(".hand-preview");
   if (preview) {
@@ -642,12 +642,31 @@ function render() {
     preview.showModal();
   }
   const nextChoice = app.querySelector("[data-choice-key]");
-  if (nextChoice && nextChoice.dataset.choiceKey !== previousChoice) nextChoice.scrollIntoView({block:"nearest"});
+  if (!guided && nextChoice && nextChoice.dataset.choiceKey !== previousChoice) nextChoice.scrollIntoView({block:"nearest"});
   app.querySelector(".match-key").open = !!openedKey;
   if (focusedAction && focusedId) {
     [...app.querySelectorAll("button[data-action][data-id]")].find(node =>
       node.dataset.action === focusedAction && node.dataset.id === focusedId && !node.disabled)?.focus({preventScroll:true});
   }
+}
+
+function firstGameControlAllowed(node) {
+  if (firstGameStep === null) return true;
+  const { action, id } = node.dataset;
+  if (inspect) return action === "closeCardPreview";
+  if (handPreview) return action === "closeHandPreview" || (action === "prepare" && id === guide()?.card);
+  if (action === "exitFirstGame") return true;
+  const step = guide();
+  if (!step) return guideTuckSeen ? action === "finishFirstGame" : action === "inspect" && id === "H19";
+  if (step.type === "objectives") {
+    return action === "objective" ? selected.size === 2 :
+      action === "option" && (selected.size < 2 || selected.has(id));
+  }
+  if (step.type !== "play") return action === step.type;
+  if (!picked) return action === "previewHand" && id === step.card;
+  const nextPayment = step.pay.find(card => !payment.has(card));
+  if (nextPayment) return action === "payHand" && id === nextPayment;
+  return action === "place" && node.dataset.site === step.site && node.classList.contains("legal");
 }
 
 function placeCard(site, slot) {
@@ -668,6 +687,7 @@ function isPaymentCard(id) {
 }
 
 app.addEventListener("dragstart", event => {
+  if (firstGameStep !== null) { event.preventDefault(); return; }
   if (event.target.closest("button:not(.hand-peek)")) { event.preventDefault(); return; }
   const id = event.target.closest("[data-drag-card]")?.dataset.dragCard;
   if (!id || busy || (!isPaymentCard(id) && !game?.legal[id])) return;
@@ -725,6 +745,7 @@ function togglePayment(id) {
 
 function closeCardPreview() {
   const id = inspect;
+  if (firstGameStep === firstGameSteps.length && id === "H19") guideTuckSeen = true;
   inspect = null;
   render();
   app.querySelector('[data-action="inspect"][data-id="' + CSS.escape(id) + '"]')?.focus({preventScroll:true});
@@ -740,7 +761,7 @@ function closeHandPreview() {
 app.addEventListener("click", async (event) => {
   const node = event.target.closest("button[data-action]");
   if (!node) return;
-  if (node.disabled || node.getAttribute("aria-disabled") === "true") return;
+  if (node.disabled || node.getAttribute("aria-disabled") === "true" || !firstGameControlAllowed(node)) return;
   const {action,id,site,slot} = node.dataset;
   if (action === "previewHand") { handPreview = id; render(); return; }
   if (action === "closeHandPreview") { closeHandPreview(); return; }
@@ -869,6 +890,7 @@ app.addEventListener("click", async (event) => {
 
 function startFirstGame() {
   firstGameStep = 0;
+  guideTuckSeen = false;
   soloFaction = seat = null;
   error = notice = "";
   localMatch = createFirstGame(newGame, data);

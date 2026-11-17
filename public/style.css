@@ -301,3 +301,29 @@ body:has(.match-screen) {background:#07121a url("/board-art/starfield.webp") cen
 @media (orientation:landscape) and (max-height:520px){
   .mobile-build .match-screen .first-game-guide{font-size:.74rem}
 }
+
+.first-game-active body:has(.guided-match){display:block;height:100dvh;overflow:hidden}
+.first-game-active .masthead{display:none}
+.first-game-active #app,.first-game-active .guided-match{height:100%;min-height:0}
+.guided-match{position:relative;grid-template-rows:auto minmax(0,1fr);padding-block:.35rem;gap:.35rem}
+.guided-match .layout,.guided-match .tabletop{height:100%;min-height:0}
+.guided-match .tabletop{grid-template-rows:minmax(0,1fr) auto;gap:.35rem}
+.guided-match .board-content{min-height:0;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.guided-match .board-content>.match-key,.guided-match .node>details,.guided-match .side-menu{display:none}
+.guided-match .board-focus{height:100%;overflow:hidden}
+.guided-match .site-navigation button:disabled[aria-pressed=true]{opacity:1}
+.guided-match>.choice{
+  position:absolute;z-index:4;inset:.45rem .45rem auto;max-height:calc(100% - .9rem);
+  overflow:auto;overscroll-behavior:contain;box-shadow:0 .5rem 1.5rem #0005
+}
+.guided-match>.choice .card-art{max-height:38dvh;width:auto;margin:auto}
+.guided-match>.error{position:absolute;inset:auto .4rem .4rem;z-index:5}
+@media (orientation:landscape) and (max-height:520px){
+  .mobile-build .guided-match .board-content{grid-template-columns:minmax(0,1fr)}
+  .mobile-build .guided-match>.choice{top:.35rem;max-height:calc(100% - .7rem)}
+  .mobile-build .guided-match .site-navigation button:not([aria-pressed=true]){display:none}
+}
+.guided-match .board-focus{container-type:size}
+.guided-match .board-focus .node{min-height:0}
+.guided-match .board-focus .site-face{max-height:32cqh;width:auto;max-width:min(42%,18rem);object-fit:contain}
+.guided-match .board-focus .site-trays{width:min(100%,160cqh,34rem);grid-template-columns:repeat(2,minmax(0,1fr))}
