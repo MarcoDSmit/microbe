@@ -212,27 +212,25 @@ function lobby() {
 const cardTitle = (c) => c.faction === "Bacteria" ? c.identity : c.name.split(" — ")[0];
 const tagNames = { hospital:"Hospital-associated", uropathogen:"Uropathogen", skin_flora:"Skin flora",
   skin_associated:"Skin-associated", gut_flora:"Gut flora", ampc:"AmpC", vre:"VRE" };
-const objectiveTags = new Set(["uropathogen","respiratory","hospital","staphylococcus"]);
-function cardTags(card, compact = false) {
-  const tags = card.tags.filter(tag => !compact || objectiveTags.has(tag));
+function cardTags(card) {
   const gram = card.gram === "Variable" ? "Gram-variable" :
     ["Positive","Negative"].includes(card.gram) ? "Gram-" + card.gram.toLowerCase() : "";
   const classification = card.faction === "Bacteria" ? [gram].filter(Boolean) :
     [card.type, ...(card.type === "Immune" ? [card.identity] : [])];
   if (card.type === "Antibiotic" && card.route !== "N/A") classification.push(card.route);
-  return [...new Set([...classification, ...tags.map(tag => tagNames[tag] ||
+  return [...new Set([...classification, ...card.tags.map(tag => tagNames[tag] ||
     tag.charAt(0).toUpperCase() + tag.slice(1).replaceAll("_"," "))])];
 }
-function strip(card, compact = false) {
+function strip(card) {
   if (card.faction === "Host") return card.rail ? '<span class="match-group" title="Antibiotic match symbol">' + icon(card.mark) + '</span>' : "";
   const lanes = [
-    ["Optimal","O",card.optimal,"Local match or one distant on-play tuck"],
-    ["Active","A",card.active,"Local tuck only"],
-    ["Resistance","R",card.resist,"Local match · blocks tuck and can trigger a reaction"],
+    ["Optimal",card.optimal,"Local match or one distant on-play tuck"],
+    ["Active",card.active,"Local tuck only"],
+    ["Resistance",card.resist,"Local match · blocks tuck and can trigger a reaction"],
   ];
-  return '<span class="match-strip' + (compact ? ' compact' : '') + '">' + lanes.filter(([, , marks])=>marks.length)
-    .map(([label, initial, marks, hint]) => '<span class="match-group ' + label.toLowerCase() + '" title="' +
-      safe(label + " · " + hint) + '"><span aria-hidden="true">' + (compact ? initial : label) +
+  return '<span class="match-strip">' + lanes.filter(([, marks])=>marks.length)
+    .map(([label, marks, hint]) => '<span class="match-group ' + label.toLowerCase() + '" title="' +
+      safe(label + " · " + hint) + '"><span aria-hidden="true">' + label +
       '</span><span class="sr-only">' + label + ': </span>' + marks.map(icon).join("") + '</span>').join("") + '</span>';
 }
 function rail(card) {
@@ -313,12 +311,10 @@ function renderBoard() {
     const cells = site.slots.map((piece, i) => {
       if (piece) {
         const c = cardOf(piece.id);
-        return '<button class="slot ' + c.faction.toLowerCase() + '" data-action="inspect" data-id="' + piece.id +
-          '" title="' + safe(c.name) + '">' + cardArt(piece.id,"board-card-art") + strip(c,true) + '<span class="sr-only">' + safe(cardTitle(c)) +
-          '</span><span class="sr-only">' + safe(cardTags(c,true).join(" · ")) + '</span>' +
-          (piece.tucked.length ? '<span class="slot-note">' + piece.tucked.length + ' tucked</span>' : "") +
-          (game.spentReactions?.[piece.id] ? '<span class="slot-note">Reaction spent</span>' : '') +
-          '</button>';
+        const label = c.name + (piece.tucked.length ? ", " + piece.tucked.length + " tucked" : "") +
+          (game.spentReactions?.[piece.id] ? ", reaction spent" : "");
+        return '<button class="slot occupied" data-action="inspect" data-id="' + safe(piece.id) +
+          '" aria-label="' + safe(label) + '">' + cardArt(piece.id,"board-card-art") + '</button>';
       }
       const legal = ready && available.sites.includes(site.id);
       return '<button class="slot empty ' + (legal ? "legal" : "") + '" data-action="place" data-site="' + site.id +

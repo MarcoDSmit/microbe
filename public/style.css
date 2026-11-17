@@ -156,3 +156,5 @@ button.art-button:active:not(:disabled) {filter:brightness(.9)}
 }
 
 .inspected-card-preview .card-art{width:auto;max-width:100%;max-height:max(10rem,calc(94dvh - 7rem));margin:auto}
+
+.grid .slot.occupied{background:transparent;border:0;padding:0}
