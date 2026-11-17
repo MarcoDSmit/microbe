@@ -11,6 +11,7 @@ function track(name, volume) {
 
 const menuVolume = 0.25;
 const music = track("menu-loop", menuVolume);
+const ambience = track("starship-engine-hum", 0.10);
 const click = track("button-click", 0.35);
 const welcome = track("welcome", 0.65);
 const faction = track("choose-faction", 0.65);
@@ -19,6 +20,7 @@ const card = track("card-played", 0.5);
 const tuck = track("card-played-tuck", 0.55);
 const cues = [click, welcome, faction, start, card, tuck];
 music.loop = true;
+ambience.loop = true;
 
 const welcomeKey = "microbe-wars.audio.welcomed";
 let welcomed = false;
@@ -58,7 +60,12 @@ function fadeMusic() {
   }, 25);
 }
 
-function syncMusic() {
+function syncBackgroundAudio() {
+  if (screen === "playing" && musicToggle.checked && !referenceOpen && !document.hidden) {
+    if (ambience.paused) ambience.play().catch(() => {});
+  } else {
+    ambience.pause();
+  }
   if (!musicToggle.checked) {
     stopMusic();
   } else if (screen !== "lobby" || referenceOpen || document.hidden) {
@@ -113,7 +120,7 @@ export function updateGameAudio(nextScreen, plays) {
     faction.pause();
     factionSpoken = false;
   }
-  syncMusic();
+  syncBackgroundAudio();
   if (startsMatch) cue(start)?.catch(() => {});
   announceLobby();
 }
@@ -128,22 +135,22 @@ document.addEventListener("click", event => {
     welcome.pause();
     faction.pause();
   }
-  syncMusic();
+  syncBackgroundAudio();
   announceLobby();
 }, true);
 
 document.addEventListener("keydown", event => {
   if (!event.isTrusted || event.repeat) return;
-  syncMusic();
+  syncBackgroundAudio();
   announceLobby();
 }, true);
 
 window.addEventListener("focus", () => {
   referenceOpen = false;
-  syncMusic();
+  syncBackgroundAudio();
   announceLobby();
 });
-musicToggle.addEventListener("change", syncMusic);
+musicToggle.addEventListener("change", syncBackgroundAudio);
 effectsToggle.addEventListener("change", () => {
   if (!effectsToggle.checked) cues.forEach(audio => audio.pause());
   else announceLobby();
@@ -151,6 +158,6 @@ effectsToggle.addEventListener("change", () => {
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) referenceOpen = false;
   else cues.forEach(audio => audio.pause());
-  syncMusic();
+  syncBackgroundAudio();
   announceLobby();
 });
