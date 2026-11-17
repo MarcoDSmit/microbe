@@ -73,16 +73,6 @@
 @media(max-width:890px){.layout.panel-open>.aside{grid-column:1}}
 .site-points,.series-score{font-weight:700;margin:.35rem 0}
 .public-points{display:flex;align-items:center;gap:.45rem .7rem;flex-wrap:wrap}
-.board-and-health{display:flex;align-items:flex-start;gap:.65rem}
-.board-content{flex:1;min-width:0}
-.health-meter{flex:0 0 clamp(4.4rem,10vw,7rem);min-width:0;display:grid;gap:.45rem;padding:.5rem;text-align:center;background:#15271e;color:#c8f6c9;border-color:#507857}
-.health-meter h2,.health-meter p{font-size:.76rem;overflow-wrap:anywhere}
-.health-meter p{font-weight:750}
-.health-bands{display:grid;gap:.22rem;width:min(100%,1.35rem);margin:auto}
-.health-band{height:1.05rem;border:1px solid #638774;border-radius:.16rem}
-.health-band.active{background:#80eba0;border-color:#c8f6c9}
-@media(max-width:580px){.board-content .board{grid-template-columns:minmax(0,1fr)}}
-
 .card-art{display:block;width:100%;height:auto;aspect-ratio:5/7;object-fit:contain;border-radius:.35rem}
 .hand-card .card-art,.choice-card .card-art,.goal-choice .card-art{pointer-events:none}
 .goal-choice{width:min(100%,14rem)}
@@ -90,3 +80,62 @@
 .grid .slot .board-card-art{width:min(100%,5.2rem);height:auto;max-height:7.3rem;pointer-events:none}
 .match-glyph{display:inline-grid;place-items:center;min-width:1em;line-height:1;font:normal 1.05em/1 "Segoe UI Symbol",sans-serif;background:#f3f6f1;border-radius:.12rem}
 .rail.bacteria .match-glyph{transform:rotate(180deg)}
+
+.match-screen{width:min(100%,78rem);padding-inline:clamp(.5rem,2vw,1.5rem)}
+.match-screen .layout{position:relative;grid-template-columns:minmax(0,1fr)}
+.match-screen .layout>.aside{grid-column:1;grid-row:2}
+.board-content{display:grid;gap:.4rem;min-width:0}
+.site-navigation{display:flex;align-items:center;gap:.35rem;overflow-x:auto;padding:.15rem .2rem .25rem}
+.site-navigation button{flex:none;font-size:.79rem;min-height:2.4rem}
+.site-navigation button[aria-pressed=true]{background:var(--green-wash);border-color:var(--green)}
+.board-focus{position:relative;display:block;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y proximity;height:clamp(11rem,46dvh,29rem)}
+.board-focus .node{min-height:100%;scroll-snap-align:start;margin-bottom:.4rem}
+.board-focus .node:last-child{margin-bottom:0}
+.board-focus .grid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.board-overview{grid-template-columns:repeat(2,minmax(0,1fr))}
+.board-overview .node{padding:.55rem}
+.board-overview .grid .slot{min-height:2.7rem;font-size:.75rem}
+.board-overview .grid .slot .board-card-art{max-height:3.5rem;width:auto;max-width:100%}
+.hand-dock{min-width:0;display:grid;gap:.3rem;background:var(--paper);padding-top:.3rem}
+.turn-status{font-size:.85rem}
+.hand-dock .public-points{padding:.25rem .55rem}
+.hand-dock .public-points .badge{padding:.15rem .55rem}
+.hand-and-controls{display:grid;grid-template-columns:minmax(0,1fr) clamp(6.75rem,17vw,11rem);gap:.45rem;align-items:start}
+.hand-dock .hand-panel{min-width:0;padding:.5rem}
+.hand-dock .hand-head{margin-bottom:.4rem}
+.hand-dock .hand-head h2{font-size:1rem}
+.hand-dock .hand{
+  --card-width:clamp(4.5rem,15vw,10rem);
+  --peek-height:clamp(3.6rem,22dvh,8.5rem);
+  display:grid;grid-template-columns:repeat(var(--hand-peeks),minmax(0,1fr)) var(--card-width);
+  max-width:100%;height:var(--peek-height);gap:0;overflow:hidden;padding:0
+}
+.hand-dock .hand.one-card{grid-template-columns:var(--card-width)}
+.hand-dock .hand-card{position:relative;min-width:0;min-height:0;height:100%;padding:0;border:0;border-radius:0;overflow:visible}
+.hand-peek{position:relative;display:block;width:100%;height:100%;padding:0;border:0;background:none;text-align:left;isolation:isolate}
+.hand-peek .card-art{width:var(--card-width);max-width:none;position:absolute;inset:0 auto auto 0;box-shadow:-2px 0 4px #0008;pointer-events:none}
+.hand-peek:focus-visible{z-index:1;outline-offset:-2px}
+.hand-edge{position:absolute;left:.15rem;bottom:.16rem;max-height:85%;max-width:90%;overflow:hidden;writing-mode:vertical-rl;transform:rotate(180deg);padding:.23rem .12rem;color:var(--ink);background:var(--card);border-radius:.2rem;font-size:.68rem;line-height:1.1;white-space:nowrap}
+.hand-card.selected .hand-edge{background:var(--green);color:var(--card)}
+.hand-card.payment .hand-edge{background:#f4cb7d;color:#342105}
+.turn-controls{width:100%;display:grid;gap:.28rem}
+.turn-controls button{min-height:2.55rem;padding:.35rem .35rem;font-size:.82rem}
+.turn-controls .payment-zone{padding:.3rem}
+.hand-preview{max-width:min(94vw,31rem);max-height:94dvh;border:1px solid var(--line);border-radius:.65rem;background:var(--card);color:var(--ink);padding:.75rem;overscroll-behavior:contain}
+.hand-preview::backdrop{background:#041a17c9}
+.preview-card{display:grid;gap:.3rem;justify-items:center}
+.preview-card h2{font-size:1rem;text-align:center}
+.preview-card .card-art{width:auto;height:auto;max-width:100%;max-height:max(10rem,calc(94dvh - 7rem))}
+@media(max-width:960px) and (orientation:landscape){
+  .match-screen{padding-top:.35rem;gap:.35rem}
+  .match-screen .summary h1{font-size:1.24rem}
+  .match-screen .summary,.match-screen .badges{gap:.25rem}
+  .match-screen .badges .badge{padding:.1rem .35rem}
+  .board-focus .grid .slot{min-height:3rem}
+  .board-focus .grid .slot .board-card-art{max-height:4rem}
+  .turn-controls button{min-height:2.4rem}
+}
+@media(max-width:580px) and (orientation:portrait){
+  .board-focus .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hand-dock .hand{--card-width:4rem}
+}
