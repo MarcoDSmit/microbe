@@ -1,3 +1,5 @@
+import { shipSoundPlayer } from "/ship-sounds.js";
+
 const musicToggle = document.querySelector("#menu-music");
 const effectsToggle = document.querySelector("#sound-effects");
 
@@ -12,6 +14,8 @@ function track(name, volume) {
 const menuVolume = 0.25;
 const music = track("menu-loop", menuVolume);
 const ambience = track("starship-engine-hum", 0.10);
+const shipSounds = shipSoundPlayer(["console-signal", "panel-buttons", "pressure-door", "sliding-door"]
+  .map(name => track(name, 0.075)));
 const click = track("button-click", 0.35);
 const welcome = track("welcome", 0.65);
 const faction = track("choose-faction", 0.65);
@@ -64,6 +68,7 @@ function syncBackgroundAudio() {
   if (screen === "playing" && musicToggle.checked && !referenceOpen && !document.hidden) {
     if (ambience.paused) ambience.play().catch(() => {});
   } else {
+    shipSounds.pause();
     ambience.pause();
   }
   if (!musicToggle.checked) {
@@ -77,6 +82,13 @@ function syncBackgroundAudio() {
     if (music.paused) music.play().catch(() => {});
   }
 }
+
+ambience.addEventListener("playing", () => {
+  if (!ambience.paused) shipSounds.resume();
+});
+ambience.addEventListener("waiting", shipSounds.pause);
+ambience.addEventListener("pause", shipSounds.pause);
+ambience.addEventListener("error", shipSounds.pause);
 
 function cue(audio) {
   if (!effectsToggle.checked || document.hidden) return;
@@ -115,6 +127,7 @@ export function updateGameAudio(nextScreen, plays) {
   if (screen === nextScreen) return;
   const startsMatch = nextScreen === "objectives" && screen !== undefined && screen !== "playing";
   screen = nextScreen;
+  if (screen !== "playing") shipSounds.reset();
   if (screen !== "lobby") {
     welcome.pause();
     faction.pause();
