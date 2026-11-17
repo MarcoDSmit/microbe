@@ -7,6 +7,7 @@ import { createFirstGame, firstGameAllows, firstGameSteps } from "/first-game.js
 import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "/card-display.js";
 import { printedCardCopy } from "/printed-card-copy.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
+import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
 const libraryId = librarySession();
@@ -537,6 +538,7 @@ function renderPublicPoints() {
 
 function render() {
   if (!data) return;
+  updateGameAudio(localMatch?.status ?? game?.status ?? (incoming.invite ? "invite" : "lobby"));
   document.documentElement.classList.toggle("first-game-active", firstGameStep !== null && firstGameStep <= firstGameSteps.length);
   if (firstGameStep === firstGameSteps.length + 1) {
     app.innerHTML = '<article class="game"><section class="panel tutorial-finish"><h1>You’re ready to play</h1>' +

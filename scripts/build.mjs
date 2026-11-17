@@ -9,7 +9,7 @@ async function scan(dir, sub = "") {
     if (entry.isDirectory()) await scan(dir, relative);
     else {
       const path = "/" + relative.replaceAll("\\", "/");
-      if (path.endsWith(".webp")) binary[path] = await readFile(join(dir, relative));
+      if (/\.(webp|mp3)$/.test(path)) binary[path] = await readFile(join(dir, relative));
       else files[path] = await readFile(join(dir, relative), "utf8");
     }
   }
@@ -34,7 +34,7 @@ if (staticDirectory) {
   await mkdir("dist/server", { recursive: true });
   await mkdir("dist/.openai", { recursive: true });
   await writeFile("dist/server/index.js", "const data = " + data + ";\nconst assets = " + JSON.stringify(files) +
-    ";\nconst images = " + JSON.stringify(Object.fromEntries(Object.entries(binary).map(([path, bytes]) => [path, bytes.toString("base64")]))) +
+    ";\nconst binaryAssets = " + JSON.stringify(Object.fromEntries(Object.entries(binary).map(([path, bytes]) => [path, bytes.toString("base64")]))) +
     ";\n" + flat(game) + "\n" + flat(api) + "\n" + entry);
   await copyFile(".openai/hosting.json", "dist/.openai/hosting.json");
 }
