@@ -234,11 +234,16 @@ function revealEndTurn() {
   app.querySelector('[data-action="end"]:enabled')?.scrollIntoView({block:"center"});
 }
 
+function welcomeBrand() {
+  return '<span class="welcome-brand"><img class="welcome-shield" src="/brand-art/shield.webp" alt="">' +
+    '<img class="welcome-wordmark" src="/brand-art/wordmark.webp" alt="Microbe Wars"></span>';
+}
+
 function lobby() {
   const joining = !mobileCatalog && Boolean(incoming.invite && incoming.code);
   const map = Array.from({length:4}, () => '<div class="sample-node">' + '<span></span>'.repeat(6) + '</div>').join("");
   return '<section class="lobby"><div class="lobby-copy"><span class="eyebrow">Field lab · two players</span>' +
-    '<h1>One board. Two factions.</h1><p>Build a foothold as Bacteria or clear infection sites as Host. ' +
+    '<h1>' + welcomeBrand() + '</h1><p>Build a foothold as Bacteria or clear infection sites as Host. ' +
     (mobileCatalog ? "Play Solo or Pass &amp; Play on this device." : "Play on one device or invite an opponent.") + '</p>' +
     '<div class="sample-map" aria-hidden="true">' + map + '</div></div><div class="panel lobby-panel">' +
     (joining ? '<h2>Join a match</h2><p>You have an invitation to room <strong>' + safe(incoming.code) + '</strong>.</p>' +
@@ -541,7 +546,8 @@ function render() {
     const faction = nextPlayer(localMatch);
     const prompt = localMatch.status === "objectives" ? "Choose your secret objectives when you’re ready." :
       localMatch.pending ? "A response needs your attention." : "Your turn is ready.";
-    app.innerHTML = '<section class="panel handoff"><span class="eyebrow">Pass &amp; Play</span><h1>Pass to ' +
+    app.innerHTML = '<section class="panel handoff">' + (localMatch.status === "objectives" ? welcomeBrand() : "") +
+      '<span class="eyebrow">Pass &amp; Play</span><h1>Pass to ' +
       safe(faction) + '</h1><p>' + safe(prompt) + '</p><p class="meta">Hand the device over before revealing the next hand.</p>' +
       button("Reveal my hand","revealLocal","","primary") +
       button("Leave match","leave","","plain") + (notice ? '<p class="notice">' + safe(notice) + '</p>' : "") + '</section>';
@@ -573,7 +579,8 @@ function render() {
     safe(step?.hint ?? (guideTuckSeen ? "The tucked MRSA adds 1 VP. Finish the walkthrough to see how a full match ends." : "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.")) + '</p></div>' :
     '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
     localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
-    '</span><h1>Infection board</h1></div><div class="badges">' + badge("You · " + game.faction,game.faction) +
+    '</span>' + (waiting || game.status === "objectives" ? welcomeBrand() : '<h1>Infection board</h1>') +
+    '</div><div class="badges">' + badge("You · " + game.faction,game.faction) +
     badge("Draw deck " + game.deckCount) + badge("Opponent hand " + game.opponentHandCount,other(game.faction)) +
     '</div></div>';
   const statusLine = '<div class="turn-status"><strong>' + safe(status) + '</strong>' +

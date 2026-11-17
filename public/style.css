@@ -327,3 +327,14 @@ body:has(.match-screen) {background:#07121a url("/board-art/starfield.webp") cen
 .guided-match .board-focus .node{min-height:0}
 .guided-match .board-focus .site-face{max-height:32cqh;width:auto;max-width:min(42%,18rem);object-fit:contain}
 .guided-match .board-focus .site-trays{width:min(100%,160cqh,34rem);grid-template-columns:repeat(2,minmax(0,1fr))}
+.welcome-brand {display:flex;align-items:center;gap:.5rem;width:min(100%,26rem);min-width:0}
+.welcome-brand img {display:block;height:auto}
+.welcome-shield {width:23%;flex:none}
+.welcome-wordmark {width:calc(77% - .5rem);min-width:0}
+.handoff .welcome-brand {width:min(100%,19rem);justify-self:center}
+.match-screen .summary .welcome-brand {width:min(100%,12rem)}
+@media (orientation:landscape) and (max-height:520px) {
+  .match-screen .summary .welcome-brand {width:7rem;gap:.25rem}
+  .match-screen .summary .welcome-wordmark {width:calc(77% - .25rem)}
+  .handoff .welcome-brand {width:min(100%,13rem)}
+}
