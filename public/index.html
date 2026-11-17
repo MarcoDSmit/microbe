@@ -15,7 +15,7 @@
     <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">✳</span><span>Microbe Wars</span></a>
     <nav class="utility" aria-label="Game help and settings">
       <details class="reference-menu">
-        <summary>Menu</summary>
+        <summary aria-label="Menu" title="Menu"><span aria-hidden="true">☰</span></summary>
         <div class="panel">
           <a id="library-link" href="/library.html" target="_blank" rel="noopener"><img src="/button-art/library.webp" alt="Card library" width="854" height="270"></a>
           <a href="/rules.html#setup" target="_blank" rel="noopener"><img src="/button-art/rules.webp" alt="Rules" width="854" height="270"></a>
@@ -25,13 +25,14 @@
         </div>
       </details>
       <details class="settings">
-        <summary>Settings</summary>
+        <summary aria-label="Settings" title="Settings"><span aria-hidden="true">⚙</span></summary>
         <div class="panel">
-          <label><input id="night-mode" type="checkbox" role="switch"> Night mode</label>
           <label for="text-size">Text size <output id="text-value" for="text-size">100%</output></label>
           <input id="text-size" type="range" min="90" max="150" step="5" value="100">
-          <label><input id="menu-music" type="checkbox" role="switch" checked> Music and ambience</label>
-          <label><input id="sound-effects" type="checkbox" role="switch" checked> Sound effects and voice cues</label>
+          <label for="menu-music">Music <output id="menu-music-value" for="menu-music">100%</output></label>
+          <input id="menu-music" type="range" min="0" max="100" value="100">
+          <label for="sound-effects">Sound effects <output id="sound-effects-value" for="sound-effects">100%</output></label>
+          <input id="sound-effects" type="range" min="0" max="100" value="100">
         </div>
       </details>
     </nav>

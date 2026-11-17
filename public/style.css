@@ -399,3 +399,69 @@ body:has(.lunar-lobby) :is(.brand,.utility) {color:#eff7ff}
   .lunar-console {width:min(100%,32rem);justify-self:center}
   .lunar-console .welcome-brand {width:min(100%,18rem)}
 }
+
+/* The site face carries both the printed card and the current match data. */
+.board .node {display:block}
+.board .site-face {
+  display:grid;align-content:start;aspect-ratio:3 / 1;height:auto;
+  width:min(100%,32rem);margin:.16rem auto .25rem;
+  background:#12232e var(--site-art) center / 100% 100% no-repeat;border-radius:.25rem;
+  overflow:hidden;color:#eefaff;
+}
+.board .site-live {
+  display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:.1rem .35rem;
+  margin:.23rem .46rem 0;padding:.15rem .25rem;background:#09131aee;
+  font-size:.7rem;line-height:1.12
+}
+.board .site-live h3 {font-size:inherit}
+.board .site-boon {
+  align-self:end;margin:.12rem .5rem 0;padding:.14rem .25rem;
+  background:#07141de8;font-size:.73rem;line-height:1.13
+}
+.board-overview .site-face {width:100%;aspect-ratio:auto;min-height:4.2rem}
+.hand-dock .hand-panel {padding:0}
+.hand-card[data-drag-card] {touch-action:none}
+.hand-peek .card-art {user-select:none}
+.board .slot.drop-target {border:1px solid #81f3d8;background:#154c4ac9}
+.touch-drag-card {position:fixed;z-index:25;width:4rem;pointer-events:none;transform:translate(-50%,-50%)}
+.hand-preview.image-preview {background:transparent;border:0;padding:0;border-radius:0;overflow:auto;color:#f0f7ff}
+.zoom-card {display:block;margin:auto;padding:0;background:none;border:0;border-radius:.2rem}
+.zoom-card .card-art {width:auto;height:auto;max-width:90vw;max-height:88dvh}
+.image-preview .detail:has(.choices) .zoom-card .card-art {max-height:67dvh}
+.image-preview .detail .choices button {min-height:2.25rem}
+.turn-controls .payment-zone {display:flex;align-items:center;justify-content:space-between;color:#edf7ff;font-size:.76rem}
+.turn-controls .payment-zone button {min-height:1.65rem;color:#edf7ff}
+.actions-left {font-size:.78rem}
+body:has(.lunar-lobby) > .masthead > .brand {display:none}
+body:has(.lunar-lobby) > .masthead {justify-content:flex-start;padding-inline:clamp(.65rem,2vw,2rem)}
+body:has(.lunar-lobby) .masthead .utility {width:max(18rem,33%);gap:.35rem}
+.masthead :is(.reference-menu,.settings) > summary {
+  display:grid;place-items:center;list-style:none;width:3rem;height:2.25rem;
+  color:#eaf9ff;background:#142430 url("/board-art/score-banner.webp") center / 100% 100% no-repeat
+}
+.masthead :is(.reference-menu,.settings) > summary::-webkit-details-marker {display:none}
+.masthead :is(.reference-menu,.settings) > summary:focus-visible {outline:2px solid #65dce9}
+body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:var(--ink)}
+@media (orientation:landscape) and (max-height:520px) {
+  .mobile-build .board-content {grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+  .mobile-build .board-focus .site-face {
+    width:min(100%,28rem);aspect-ratio:auto;min-height:2.7rem;
+    margin:.08rem auto .15rem;padding-bottom:.35rem
+  }
+  .mobile-build .board-focus .site-trays {width:min(100%,180cqh,34rem)}
+  .board .site-live {margin-top:.14rem;font-size:.64rem;padding:.1rem}
+  .board .site-boon {font-size:.6rem;padding:.1rem .2rem;margin-top:.05rem}
+  .board-overview .site-live {font-size:.6rem}
+  .mobile-build .hand-dock .hand-panel {padding:0}
+  .mobile-build .hand-dock .hand {--peek-height:clamp(3rem,20dvh,6rem)}
+  body:has(.lunar-lobby) .masthead .utility {width:max(16rem,34%)}
+}
+@media (orientation:portrait) and (max-width:680px) {
+  body:has(.lunar-lobby) .masthead .utility {width:100%}
+  .board-overview .site-trays {grid-template-columns:minmax(0,1fr)}
+}
+
+@media (orientation:landscape) and (max-height:335px) {
+  .mobile-build .board-focus .site-face {min-height:2.25rem}
+  .mobile-build .board-focus .site-trays {width:min(100%,160cqh,34rem)}
+}

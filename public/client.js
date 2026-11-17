@@ -288,14 +288,6 @@ function strip(card) {
       safe(label + " · " + hint) + '"><span aria-hidden="true">' + label +
       '</span><span class="sr-only">' + label + ': </span>' + marks.map(icon).join("") + '</span>').join("") + '</span>';
 }
-function rail(card) {
-  const inv = card.faction === "Bacteria";
-  const order = inv ? [...data.order].reverse() : data.order;
-  const lanes = inv ? [card.optimal, card.active, card.resist] : [card.rail ? [card.mark] : []];
-  return '<div class="rail ' + card.faction.toLowerCase() + '" aria-label="Antibiotic match rail">' +
-    lanes.map((lane) => '<span class="lane">' + order.map((k) =>
-      '<span>' + (lane.includes(k) ? icon(k) : "") + '</span>').join("") + '</span>').join("") + '</div>';
-}
 function cardArt(id, className = "", alt = "") {
   return '<img class="card-art ' + className + '" src="' + safe(cardArtUrl(id)) +
     '" alt="' + safe(alt) + '" width="750" height="1050" loading="lazy" decoding="async" draggable="false">';
@@ -328,8 +320,8 @@ function cardDetail() {
           (requiredSite ? " Play the antibiotic at " + safe(siteName(requiredSite)) + "." : "") :
           safe(value[0] + value.slice(1).toLowerCase()) + " match. Check the ability and defenses.") : "No matching action.") + '</p>';
   }
-  return '<div class="panel detail"><h2 class="sr-only">' + safe(card.name) + '</h2>' +
-    cardFace(card, instance) + '<details><summary>Aligned match rail</summary>' + rail(card) + '</details>' +
+  return '<div class="detail"><h2 class="sr-only">' + safe(card.name) + '</h2>' +
+    zoomCard(instance,"closeCardPreview") +
     ((card.id === "H39" && !game.board.some(s => s.id === "N02")) ||
      (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
       '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
@@ -355,10 +347,7 @@ function renderBoard() {
     button("Overview", "siteView", 'data-id="overview" aria-pressed="' + boardOverview + '"') + '</nav>';
   const available = game.legal[picked];
   const ready = available && payment.size === available.cost && !busy;
-  return navigation + '<details class="panel match-key"><summary>Match key · Optimal, Active, Resistance</summary>' +
-    '<p>Find the antibiotic’s symbol on the bacterium. <b>Optimal (O)</b> qualifies for a local tuck or a single distant tuck instead of the on-play local attack. ' +
-    '<b>Active (A)</b> qualifies for a local tuck. <b>Resistance (R)</b> blocks the tuck. In new matches, playing the matching antibiotic here can give Bacteria a once-per-copy reaction. ' +
-    'A symbol absent from all three rows gives no tuck. Follow any limits printed on the card.</p></details>' +
+  return navigation +
     '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' + game.board.filter(site => firstGameStep === null || site.id === focusedSite).map((site) => {
     const occupied = site.slots.slice(0,6).filter(Boolean), b = occupied.filter((o) => cardOf(o.id).faction === "Bacteria").length;
     const h = occupied.length-b;
@@ -387,15 +376,15 @@ function renderBoard() {
     const control = b === h ? (b ? "Contested" : "Unoccupied") :
       (b > h ? "Bacteria" : "Host") + (Math.max(b,h) === 6 ? " full control" : " majority");
     const points = game.sitePoints?.[site.id];
-    const scoreLine = points ? '<p class="site-points">Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</p>' : '';
-    const siteFace = boardOverview ? "" : '<img class="site-face" src="/board-art/' +
-      safe(site.id) + '.webp" width="960" height="320" alt="">';
+    const boon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
+    const siteFace = '<div class="site-face" style="--site-art:url(/board-art/' + safe(site.id) + '.webp)">' +
+      '<div class="site-live"><h3>' + safe(info.name) + '</h3><span>' + control + ' · ' + occupied.length + '/6</span>' +
+      (points ? '<span>Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</span>' : '') +
+      '</div><p class="site-boon">' + safe(boon) + '</p>' +
+      '<span class="sr-only">' + safe(info.bacteriaSynergy + ' ' + info.hostSynergy) + '</span></div>';
     const overflow = cells.length > 6 ? '<div class="grid extra-card-slots">' + cells.slice(6).join("") + '</div>' : "";
-    return '<section class="node" data-board-site="' + safe(site.id) + '"><div class="node-title"><h3>' + safe(info.name) + '</h3><span class="slot-note">' +
-      control + ' · ' + occupied.length + '/6</span></div>' + scoreLine + siteFace +
-      '<div class="site-trays">' + trays + '</div>' + overflow + extraSpace + '<details><summary>Site boon &amp; scoring</summary><small>' +
-      safe(game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power) + '</small><small>Majority +3 VP · Full control +5 VP</small><small>' +
-      safe(info.bacteriaSynergy) + '<br>' + safe(info.hostSynergy) + '</small></details></section>';
+    return '<section class="node" data-board-site="' + safe(site.id) + '">' + siteFace +
+      '<div class="site-trays">' + trays + '</div>' + overflow + extraSpace + '</section>';
   }).join("") + '</div>';
 }
 
@@ -469,49 +458,41 @@ function decision() {
 }
 
 function renderHand() {
-  const legal = game.legal[picked];
-  const caption = !game.hand.length ? "Your hand is empty." : legal ?
-    payment.size === legal.cost ? (dropSpace ? "Confirm the destination." : "Choose a highlighted space.") :
-      "Select " + legal.cost + " other card" + (legal.cost === 1 ? "" : "s") + " to discard." :
-    "Tap a card to view it.";
   const layout = 'style="--hand-peeks:' + Math.max(0, game.hand.length - 1) + '"';
-  return '<section class="panel hand-panel"><div class="hand-head"><div><h2>Your hand · ' + game.hand.length +
-    '</h2><span class="meta">' + safe(caption) + '</span></div>' +
-    (dropSpace && legal ? '<div class="card-controls">' + button("Play at " + siteName(dropSpace.site),"confirmDrop",
-      payment.size !== legal.cost || busy ? "disabled" : "", "primary") + button("Cancel","clear") + '</div>' :
-      legal ? button("Clear selection","clear") : "") + '</div><div class="hand' +
+  return '<section class="hand-panel" aria-label="Cards in hand"><div class="hand' +
     (game.hand.length === 1 ? ' one-card' : '') + '" ' + layout + '>' + game.hand.map((id) => {
       const card = cardOf(id), paying = payment.has(id), active = picked === id;
       const canPay = paymentMode && !active;
       const label = card.name + (game.actionRules ? copyLabel(id) : "") +
         (canPay ? (paying ? ", selected for payment" : ", select for payment") : ", view card");
       return '<article class="hand-card ' + card.faction.toLowerCase() + (active ? " selected" : "") + (paying ? " payment" : "") + '"' +
-        ((canPay || game.legal[id]) && !busy ? ' draggable="true" data-drag-card="' + safe(id) + '"' : "") + '>' +
+        (!paymentMode && game.legal[id] && !busy ? ' draggable="true" data-drag-card="' + safe(id) + '"' : "") + '>' +
         '<button type="button" class="hand-peek" data-action="' + (canPay ? "payHand" : "previewHand") +
         '" data-id="' + safe(id) + '" aria-label="' + safe(label) + '" title="' + safe(label) + '"' +
         (canPay ? ' aria-pressed="' + paying + '"' : ' aria-haspopup="dialog"') + '>' +
-        cardArt(id) + '<span class="hand-edge" aria-hidden="true">' + safe(cardTitle(card)) + '</span></button></article>';
+        cardArt(id) + '</button></article>';
     }).join("") + '</div></section>';
 }
 
 function renderPayment() {
-  if (!paymentMode) return "";
-  const cost = game.legal[picked].cost;
-  return '<div class="payment-zone" aria-label="Payment"><h3>Payment <span aria-live="polite">' +
-    payment.size + '/' + cost + '</span></h3><p class="meta">Tap cards or drag them here.</p></div>';
+  const cost = game.legal[picked]?.cost;
+  if (!paymentMode || !cost) return "";
+  return '<div class="payment-zone" aria-label="Payment"><span aria-live="polite">Tap ' +
+    (cost - payment.size) + ' to pay</span>' + (firstGameStep === null ? button("Cancel","clear","","plain") : "") + '</div>';
+}
+
+function zoomCard(id, action) {
+  return '<button class="zoom-card" type="button" data-action="' + action + '" aria-label="' +
+    safe("Return " + cardOf(id).name) + '">' + cardArt(id) + '</button>';
 }
 
 function renderHandPreview() {
   if (!game.hand.includes(handPreview)) handPreview = null;
   if (!handPreview) return "";
-  const card = cardOf(handPreview), legal = game.legal[handPreview];
-  return '<dialog class="hand-preview" aria-labelledby="hand-preview-title"><div class="preview-card">' +
-    '<div class="card-controls">' + button("Close","closeHandPreview","","secondary") +
-    (firstGameStep !== null ? button("Exit tutorial","exitFirstGame","","secondary tutorial-exit") : "") +
-    (legal && !busy && !paymentMode ? button("Play this card","prepare",'data-id="' + safe(handPreview) + '"',"primary") : "") +
-    '</div><h2 class="sr-only" id="hand-preview-title">' + safe(card.name) + '</h2>' +
-    (legal && legal.cost !== printedCost(handPreview, game.hostBalance) ?
-      '<p class="meta">' + legal.cost + ' to play now</p>' : '') + cardFace(card,handPreview) + '</div></dialog>';
+  return '<dialog class="hand-preview image-preview" aria-label="Enlarged card">' +
+    zoomCard(handPreview,"closeHandPreview") +
+    (firstGameStep !== null && game.legal[handPreview] ?
+      button("Play this card","prepare",'data-id="' + safe(handPreview) + '"',"primary") : "") + '</dialog>';
 }
 
 function renderScore() {
@@ -529,14 +510,15 @@ function renderScore() {
     button("Download match replay","exportReplay",busy ? "disabled" : "") +
     button("Play again","rematch",busy ? "disabled" : "", "primary") + '</section>';
 }
-function renderPublicPoints() {
+function renderPublicPoints(status) {
   if (!game.sitePoints) return "";
   const sites = Object.values(game.sitePoints);
   const host = sites.reduce((sum,site) => sum + site.Host,0);
   const bacteria = sites.reduce((sum,site) => sum + site.Bacteria,0);
   return '<div class="panel public-points"><strong class="board-points-label">Board points</strong>' +
     badge("Bacteria " + bacteria + " VP","Bacteria") + badge("Host " + host + " VP","Host") +
-    '<small>Secret objectives score separately.</small></div>';
+    (game.status === "playing" && game.turn === game.faction ?
+      '<strong class="actions-left">' + game.slots + (game.actionRules ? " actions left" : " plays left") + '</strong>' : '<span class="actions-left">' + safe(status) + '</span>') + '</div>';
 }
 
 function render() {
@@ -595,11 +577,6 @@ function render() {
     '</div><div class="badges">' + badge("You · " + game.faction,game.faction) +
     badge("Draw deck " + game.deckCount) + badge("Opponent hand " + game.opponentHandCount,other(game.faction)) +
     '</div></div>';
-  const statusLine = '<div class="turn-status"><strong>' + safe(status) + '</strong>' +
-    (game.turnNumber ? ' <span class="meta">· Turn ' + game.turnNumber + ' · ' + game.slots +
-      (game.actionRules ? " actions left" : " normal plays left") + (game.jointPlay ? " · Site bonus play available" : "") + '</span>' : "") +
-    (game.actionRules && topDiscard ? '<div class="meta discard-summary">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
-    '</div>';
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
     (guided && !step ? button("Finish walkthrough","finishFirstGame","","primary") : "") +
     actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
@@ -619,7 +596,6 @@ function render() {
   const boardScroll = previousBoard && previousBoard.dataset.guideStep === String(firstGameStep) ? previousBoard.scrollTop : null;
   const focused = document.activeElement?.dataset;
   const focusedAction = focused?.action, focusedId = focused?.id;
-  const openedKey = app.querySelector(".match-key")?.open;
   const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
   app.innerHTML = '<article class="game match-screen' + (guided ? ' guided-match' : '') + '">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
@@ -627,12 +603,12 @@ function render() {
     [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
     '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
-    renderBoard() + '</div><div class="hand-dock">' + statusLine + renderPublicPoints() +
+    renderBoard() + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
       (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderHandPreview() +
-    (inspect ? '<dialog class="hand-preview inspected-card-preview" aria-label="Card details">' +
-      button("Close","closeCardPreview") + (guided ? button("Exit tutorial","exitFirstGame","","secondary tutorial-exit") : "") + cardDetail() + '</dialog>' : '') + '</article>';
+    (inspect ? '<dialog class="hand-preview image-preview inspected-card-preview" aria-label="Card details">' +
+      cardDetail() + '</dialog>' : '') + '</article>';
   const board = app.querySelector(".board-focus");
   if (board && !guided) {
     board.dataset.guideStep = String(firstGameStep);
@@ -662,7 +638,6 @@ function render() {
   }
   const nextChoice = app.querySelector("[data-choice-key]");
   if (!guided && nextChoice && nextChoice.dataset.choiceKey !== previousChoice) nextChoice.scrollIntoView({block:"nearest"});
-  app.querySelector(".match-key").open = !!openedKey;
   if (focusedAction && focusedId) {
     [...app.querySelectorAll("button[data-action][data-id]")].find(node =>
       node.dataset.action === focusedAction && node.dataset.id === focusedId && !node.disabled)?.focus({preventScroll:true});
@@ -692,7 +667,9 @@ function placeCard(site, slot) {
   const legal = game.legal[picked];
   if (!legal?.sites.includes(site) || payment.size !== legal.cost || busy) return;
   if (legal.tuckSites && !legal.tuckSites.includes(site) &&
-      !confirm("There is no eligible tuck target from this site. Play the card anyway?")) return;
+      !confirm("There is no eligible tuck target from this site. Play the card anyway?")) {
+    picked = dropSpace = null; payment.clear(); paymentMode = false; render(); return;
+  }
   return move({type:"play", card:picked, site, slot:Number(slot), pay:[...payment]});
 }
 
@@ -705,52 +682,81 @@ function isPaymentCard(id) {
   return !!id && !!game && paymentMode && id !== picked && game.hand.includes(id);
 }
 
-app.addEventListener("dragstart", event => {
-  if (firstGameStep !== null) { event.preventDefault(); return; }
-  if (event.target.closest("button:not(.hand-peek)")) { event.preventDefault(); return; }
-  const id = event.target.closest("[data-drag-card]")?.dataset.dragCard;
-  if (!id || busy || (!isPaymentCard(id) && !game?.legal[id])) return;
+function beginDrag(id) {
+  if (firstGameStep !== null || paymentMode || busy || !game?.legal[id]) return false;
   dragged = id;
-  event.dataTransfer.setData("text/plain", id);
-  event.dataTransfer.effectAllowed = "move";
-  if (isPaymentCard(id)) {
-    if (!payment.has(id) && payment.size < game.legal[picked].cost) {
-      app.querySelector(".payment-zone")?.classList.add("drop-target");
-    }
-    return;
-  }
   app.querySelectorAll('[data-action="place"]').forEach(node => {
     if (game.legal[id].sites.includes(node.dataset.site)) node.classList.add("drop-target");
   });
+  return true;
+}
+
+function dropCard(target) {
+  const id = dragged;
+  const legal = game?.legal[id];
+  clearDrag();
+  if (!target || !legal || busy || !legal.sites.includes(target.dataset.site)) return;
+  const {site, slot} = target.dataset;
+  picked = id;
+  payment.clear();
+  paymentMode = legal.cost > 0;
+  dropSpace = paymentMode ? {site, slot} : null;
+  if (paymentMode) render();
+  else placeCard(site, slot);
+}
+
+app.addEventListener("dragstart", event => {
+  const id = event.target.closest("[data-drag-card]")?.dataset.dragCard;
+  if (!id) return;
+  if (!beginDrag(id)) { event.preventDefault(); return; }
+  event.dataTransfer.setData("text/plain", id);
+  event.dataTransfer.effectAllowed = "move";
 });
 app.addEventListener("dragover", event => {
-  if (!dragged || !event.target.closest(".drop-target")) return;
-  event.preventDefault();
-  event.dataTransfer.dropEffect = "move";
+  if (dragged && event.target.closest(".drop-target")) event.preventDefault();
 });
 app.addEventListener("dragend", clearDrag);
 app.addEventListener("drop", event => {
-  const target = event.target.closest(".drop-target");
-  if (target?.matches(".payment-zone") && isPaymentCard(dragged) && !busy) {
-    event.preventDefault();
-    const id = dragged;
-    clearDrag();
-    if (!payment.has(id)) togglePayment(id);
-    return;
-  }
-  const legal = dragged && game?.legal[dragged];
-  if (!target || !legal || busy || !legal.sites.includes(target.dataset.site)) { clearDrag(); return; }
+  if (!dragged) return;
   event.preventDefault();
-  const {site, slot} = target.dataset;
-  if (picked !== dragged) payment.clear();
-  picked = dragged;
-  paymentMode = legal.cost > 0;
-  dropSpace = null;
-  clearDrag();
-  if (payment.size !== legal.cost) dropSpace = {site, slot};
-  render();
-  if (!dropSpace) return placeCard(site, slot);
+  dropCard(event.target.closest(".drop-target"));
 });
+
+let touchDrag = null;
+let suppressTapUntil = 0;
+app.addEventListener("pointerdown", event => {
+  const hand = event.target.closest("[data-drag-card]");
+  if (event.pointerType !== "touch" || !event.isPrimary || !hand || firstGameStep !== null) return;
+  touchDrag = {id:event.pointerId, card:hand.dataset.dragCard, x:event.clientX, y:event.clientY, hand, ghost:null};
+});
+app.addEventListener("pointermove", event => {
+  const touch = touchDrag;
+  if (!touch || event.pointerId !== touch.id) return;
+  if (!touch.ghost) {
+    if (Math.hypot(event.clientX - touch.x, event.clientY - touch.y) < 9) return;
+    if (!beginDrag(touch.card)) { touchDrag = null; return; }
+    touch.ghost = touch.hand.querySelector(".card-art").cloneNode();
+    touch.ghost.className = "touch-drag-card";
+    touch.ghost.alt = "";
+    document.body.append(touch.ghost);
+  }
+  touch.ghost.style.left = event.clientX + "px";
+  touch.ghost.style.top = event.clientY + "px";
+});
+function endTouchDrag(event) {
+  const touch = touchDrag;
+  if (!touch || event.pointerId !== touch.id) return;
+  touchDrag = null;
+  if (!touch.ghost) return;
+  touch.ghost.remove();
+  suppressTapUntil = performance.now() + 300;
+  if (event.type === "pointerup") {
+    dropCard(document.elementFromPoint(event.clientX, event.clientY)?.closest(".drop-target"));
+  } else clearDrag();
+}
+app.addEventListener("pointerup", endTouchDrag);
+app.addEventListener("pointercancel", endTouchDrag);
+app.addEventListener("lostpointercapture", endTouchDrag);
 
 function togglePayment(id) {
   const cost = game.legal[picked]?.cost;
@@ -759,7 +765,10 @@ function togglePayment(id) {
   if (expected && !payment.has(id) && id !== expected.find(card => !payment.has(card))) return;
   if (payment.has(id)) payment.delete(id);
   else if (payment.size < cost) payment.add(id);
-  render();
+  if (dropSpace && payment.size === cost) {
+    const {site, slot} = dropSpace;
+    placeCard(site, slot);
+  } else render();
 }
 
 function closeCardPreview() {
@@ -780,6 +789,7 @@ function closeHandPreview() {
 app.addEventListener("click", async (event) => {
   const node = event.target.closest("button[data-action]");
   if (!node) return;
+  if (event.detail && performance.now() < suppressTapUntil && ["previewHand","place"].includes(node.dataset.action)) return;
   if (node.disabled || node.getAttribute("aria-disabled") === "true" || !firstGameControlAllowed(node)) return;
   const {action,id,site,slot} = node.dataset;
   if (action === "previewHand") { handPreview = id; render(); return; }
@@ -890,7 +900,6 @@ app.addEventListener("click", async (event) => {
   if (action === "refugeMove") return move({ type:"refuge",
     ...(game.pending?.self ? {} : { protector:[...selected][0] }), destination:id });
   if (action === "place") return placeCard(site, slot);
-  if (action === "confirmDrop" && dropSpace) return placeCard(dropSpace.site, dropSpace.slot);
   if (action === "panel") { sidePanel = sidePanel === id ? null : id; render(); return; }
   if (action === "inspect") { inspect = id; render(); return; }
   if (action === "clear") { picked = null; dropSpace = null; payment.clear(); paymentMode = false; render(); return; }

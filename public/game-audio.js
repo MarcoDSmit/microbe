@@ -1,22 +1,25 @@
 import { shipSoundPlayer } from "/ship-sounds.js";
 
-const musicToggle = document.querySelector("#menu-music");
-const effectsToggle = document.querySelector("#sound-effects");
+const musicSlider = document.querySelector("#menu-music");
+const effectsSlider = document.querySelector("#sound-effects");
+
+const levels = new Map();
 
 function track(name, volume) {
   const audio = new Audio();
   audio.preload = "auto";
   audio.volume = volume;
+  levels.set(audio, volume);
   audio.src = `/audio/${name}.mp3`;
   return audio;
 }
 
-const menuVolume = 0.25;
+const menuVolume = 0.40;
 const music = track("menu-loop", menuVolume);
 const ambience = track("starship-engine-hum", 0.10);
-const shipSounds = shipSoundPlayer(["console-signal", "panel-buttons", "pressure-door", "sliding-door"]
-  .map(name => track(name, 0.075)));
-const click = track("button-click", 0.35);
+const shipTracks = ["console-signal", "panel-buttons", "pressure-door", "sliding-door"].map(name => track(name, 0.075));
+const shipSounds = shipSoundPlayer(shipTracks);
+const click = track("button-click", 0.35 * 0.85);
 const welcome = track("welcome", 0.65);
 const faction = track("choose-faction", 0.65);
 const start = track("game-start", 0.55);
@@ -35,22 +38,45 @@ let factionSpoken = false;
 let referenceOpen = false;
 let fade = null;
 
-function restoreToggle(toggle) {
-  const key = `microbe-wars.audio.${toggle.id}`;
-  try { toggle.checked = localStorage.getItem(key) !== "off"; } catch {}
-  toggle.addEventListener("change", () => {
-    try { localStorage.setItem(key, toggle.checked ? "on" : "off"); } catch {}
+const gain = slider => Number(slider.value) / 100;
+const volume = (audio, slider) => levels.get(audio) * gain(slider);
+
+function restoreVolume(slider, update) {
+  const key = `microbe-wars.audio.${slider.id}`;
+  const output = document.getElementById(slider.id + "-value");
+  try {
+    const saved = localStorage.getItem(key);
+    if (saved === "off") slider.value = 0;
+    else if (saved !== null && saved !== "on" && Number.isFinite(Number(saved))) slider.value = saved;
+  } catch {}
+  const apply = () => {
+    output.value = slider.value + "%";
+    update();
+  };
+  slider.addEventListener("input", () => {
+    try { localStorage.setItem(key, slider.value); } catch {}
+    apply();
+    syncBackgroundAudio();
   });
+  apply();
 }
 
-restoreToggle(musicToggle);
-restoreToggle(effectsToggle);
+restoreVolume(musicSlider, () => {
+  music.volume = volume(music,musicSlider);
+  ambience.volume = volume(ambience,musicSlider);
+});
+restoreVolume(effectsSlider, () => {
+  for (const audio of [...cues,...shipTracks]) {
+    audio.volume = volume(audio,effectsSlider);
+    if (gain(effectsSlider) === 0) audio.pause();
+  }
+});
 
 function stopMusic() {
   clearInterval(fade);
   fade = null;
   music.pause();
-  music.volume = menuVolume;
+  music.volume = volume(music,musicSlider);
 }
 
 function fadeMusic() {
@@ -65,33 +91,28 @@ function fadeMusic() {
 }
 
 function syncBackgroundAudio() {
-  if (screen === "playing" && musicToggle.checked && !referenceOpen && !document.hidden) {
+  const playing = screen === "playing" && !referenceOpen && !document.hidden;
+  if (playing && gain(effectsSlider)) shipSounds.resume();
+  else shipSounds.pause();
+  if (playing && gain(musicSlider)) {
     if (ambience.paused) ambience.play().catch(() => {});
   } else {
-    shipSounds.pause();
     ambience.pause();
   }
-  if (!musicToggle.checked) {
+  if (!gain(musicSlider)) {
     stopMusic();
   } else if (screen !== "lobby" || referenceOpen || document.hidden) {
     fadeMusic();
   } else {
     clearInterval(fade);
     fade = null;
-    music.volume = menuVolume;
+    music.volume = volume(music,musicSlider);
     if (music.paused) music.play().catch(() => {});
   }
 }
 
-ambience.addEventListener("playing", () => {
-  if (!ambience.paused) shipSounds.resume();
-});
-ambience.addEventListener("waiting", shipSounds.pause);
-ambience.addEventListener("pause", shipSounds.pause);
-ambience.addEventListener("error", shipSounds.pause);
-
 function cue(audio) {
-  if (!effectsToggle.checked || document.hidden) return;
+  if (!gain(effectsSlider) || document.hidden) return;
   audio.currentTime = 0;
   return audio.play();
 }
@@ -162,11 +183,6 @@ window.addEventListener("focus", () => {
   referenceOpen = false;
   syncBackgroundAudio();
   announceLobby();
-});
-musicToggle.addEventListener("change", syncBackgroundAudio);
-effectsToggle.addEventListener("change", () => {
-  if (!effectsToggle.checked) cues.forEach(audio => audio.pause());
-  else announceLobby();
 });
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) referenceOpen = false;
