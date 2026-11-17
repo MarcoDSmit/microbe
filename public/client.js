@@ -17,6 +17,7 @@ const storeKey = "microbe-wars.seat";
 const passKey = "microbe-wars.pass-play";
 const modeKey = "microbe-wars.mobile-mode";
 const localSaves = mobileCatalog ? localStorage : sessionStorage;
+if (mobileCatalog) document.documentElement.classList.add("mobile-build");
 const soloKey = "microbe-wars.solo";
 const saved = (() => { try { return JSON.parse(sessionStorage.getItem(storeKey)); } catch { return null; } })();
 const fragment = new URLSearchParams(location.hash.slice(1));
@@ -386,7 +387,7 @@ function decision() {
   if (!p) return "";
   if (p.f !== game.faction) return '<div class="panel choice"><h2>Awaiting response</h2><p>' + safe(p.prompt) + '</p></div>';
   if (p.kind === "bonus") {
-    return '<div class="panel choice"><h2>Bonus play</h2><p>Select a legal card from your hand, or skip this bonus.</p>' +
+    return '<div class="panel choice bonus-choice"><h2>Bonus play</h2><p>Select a legal card from your hand, or skip this bonus.</p>' +
       button("Skip bonus","skipBonus",busy ? "disabled" : "") + '</div>';
   }
   if (p.kind === "refuge") {
@@ -471,7 +472,7 @@ function renderPublicPoints() {
   const sites = Object.values(game.sitePoints);
   const host = sites.reduce((sum,site) => sum + site.Host,0);
   const bacteria = sites.reduce((sum,site) => sum + site.Bacteria,0);
-  return '<div class="panel public-points"><strong>Board points</strong>' +
+  return '<div class="panel public-points"><strong class="board-points-label">Board points</strong>' +
     badge("Bacteria " + bacteria + " VP","Bacteria") + badge("Host " + host + " VP","Host") +
     '<small>Secret objectives score separately.</small></div>';
 }
@@ -515,7 +516,7 @@ function render() {
   const statusLine = '<div class="turn-status"><strong>' + safe(status) + '</strong>' +
     (game.turnNumber ? ' <span class="meta">· Turn ' + game.turnNumber + ' · ' + game.slots +
       (game.actionRules ? " actions left" : " normal plays left") + (game.jointPlay ? " · Site bonus play available" : "") + '</span>' : "") +
-    (game.actionRules && topDiscard ? '<div class="meta">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
+    (game.actionRules && topDiscard ? '<div class="meta discard-summary">Top of your discard · ' + safe(topDiscard.name) + '</div>' : "") +
     '</div>';
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
     actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +

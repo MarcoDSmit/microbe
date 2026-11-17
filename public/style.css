@@ -158,3 +158,83 @@ button.art-button:active:not(:disabled) {filter:brightness(.9)}
 .inspected-card-preview .card-art{width:auto;max-width:100%;max-height:max(10rem,calc(94dvh - 7rem));margin:auto}
 
 .grid .slot.occupied{background:transparent;border:0;padding:0}
+
+/* Keep the native landscape match inside the usable WebView. */
+@media (orientation:landscape) and (max-height:520px) {
+  .mobile-build body:has(.match-screen) {
+    height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);overflow:hidden;
+  }
+  .mobile-build .masthead {min-height:2.3rem;padding:0 .65rem}
+  .mobile-build .brand {font-size:1rem}
+  .mobile-build .brand-mark {width:1.35rem;height:1.35rem;font-size:.85rem}
+  .mobile-build #app:has(.match-screen) {min-height:0}
+  .mobile-build .match-screen {
+    position:relative;height:100%;padding:.25rem .5rem .4rem;gap:.25rem;
+    grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);
+  }
+  .mobile-build .match-screen .summary {grid-column:1;grid-row:1;min-width:0}
+  .mobile-build .match-screen .summary h1 {display:none}
+  .mobile-build .match-screen .summary .eyebrow {letter-spacing:.04em}
+  .mobile-build .match-screen .badges {gap:.2rem}
+  .mobile-build .match-screen .badges .badge {font-size:.72rem;padding:.04rem .32rem}
+  .mobile-build .match-screen .side-menu {grid-column:2;grid-row:1;align-items:center;gap:.2rem}
+  .mobile-build .match-screen .side-menu button {font-size:.77rem;padding:.3rem .45rem}
+  .mobile-build .match-screen .layout {
+    grid-column:1/-1;grid-row:2;min-height:0;height:100%;display:block;
+  }
+  .mobile-build .match-screen .tabletop {
+    height:100%;min-height:0;grid-template-rows:minmax(0,1fr) auto;gap:.25rem;
+  }
+  .mobile-build .board-content {min-height:0;grid-template-rows:auto auto minmax(0,1fr);gap:.15rem;position:relative}
+  .mobile-build .site-navigation {padding:0;gap:.2rem}
+  .mobile-build .site-navigation button {padding:.28rem .45rem;min-height:1.85rem}
+  .mobile-build .match-key {padding:.12rem .4rem;font-size:.72rem}
+  .mobile-build .match-key[open] p {
+    position:absolute;z-index:3;left:0;right:0;padding:.5rem;
+    background:var(--card);border:1px solid var(--line);border-radius:.35rem;
+  }
+  .mobile-build .board {min-height:0;height:100%;overflow-y:auto;overscroll-behavior:contain}
+  .mobile-build .board .node {padding:.28rem .4rem}
+  .mobile-build .board .node-title {margin:0}
+  .mobile-build .board .site-points {margin:.05rem 0 .15rem;font-size:.73rem}
+  .mobile-build .board .node>details {margin-top:.2rem;padding-top:.15rem;font-size:.72rem}
+  .mobile-build .board-focus .grid .slot {min-height:clamp(2.15rem,11dvh,4.6rem)}
+  .mobile-build .board-focus .grid .board-card-art {max-height:clamp(2rem,11dvh,4.6rem)}
+  .mobile-build .board-overview {grid-template-columns:repeat(4,minmax(0,1fr));gap:.25rem}
+  .mobile-build .board-overview .grid {gap:.15rem}
+  .mobile-build .board-overview .grid .slot {min-height:1.45rem;padding:.1rem}
+  .mobile-build .board-overview .grid .board-card-art {max-height:clamp(1.3rem,6dvh,2.6rem)}
+  .mobile-build .hand-dock {gap:.18rem;padding:0}
+  .mobile-build .turn-status {font-size:.75rem;line-height:1.15}
+  .mobile-build .discard-summary,.mobile-build .board-points-label,.mobile-build .public-points small {display:none}
+  .mobile-build .hand-dock .public-points {padding:.1rem .35rem;gap:.25rem}
+  .mobile-build .hand-dock .public-points .badge {padding:.02rem .3rem;font-size:.75rem}
+  .mobile-build .hand-and-controls {
+    gap:.3rem;grid-template-columns:minmax(0,1fr) clamp(8.5rem,26vw,15rem);
+  }
+  .mobile-build .hand-dock .hand-panel {padding:.25rem}
+  .mobile-build .hand-dock .hand-head {margin-bottom:.16rem;gap:.15rem;align-items:center}
+  .mobile-build .hand-head h2,.mobile-build .hand-head .meta {display:inline;font-size:.76rem}
+  .mobile-build .hand-head .meta {margin-left:.35rem}
+  .mobile-build .hand-head button {padding:.2rem .32rem;font-size:.73rem}
+  .mobile-build .hand-dock .hand {--peek-height:clamp(2.3rem,15dvh,4.7rem);--card-width:clamp(3.6rem,11vw,7rem)}
+  .mobile-build .turn-controls {grid-template-columns:repeat(2,minmax(0,1fr));gap:.18rem}
+  .mobile-build .turn-controls button {min-height:2.3rem;font-size:.74rem;padding:.2rem}
+  .mobile-build .turn-controls .art-button {width:100%;height:2.3rem;min-height:0;padding:0}
+  .mobile-build .turn-controls .art-button img {height:100%;object-fit:contain}
+  .mobile-build .turn-controls .payment-zone {grid-column:1/-1;padding:.15rem .3rem}
+  .mobile-build .turn-controls .payment-zone h3 {font-size:.75rem}
+  .mobile-build .turn-controls .payment-zone p {display:none}
+  .mobile-build .match-screen > :is(.choice,.error,.notice),.mobile-build .match-screen .layout>.aside {
+    position:absolute;z-index:4;inset:2rem .45rem auto;
+    max-height:calc(100% - 2.4rem);overflow:auto;overscroll-behavior:contain;
+  }
+  .mobile-build .match-screen > .choice {padding:.45rem;gap:.25rem;box-shadow:0 .5rem 1.5rem #0005}
+  .mobile-build .match-screen > .bonus-choice {inset:4.6rem .55rem auto auto;max-width:48%;z-index:2}
+  .mobile-build .match-screen > .bonus-choice h2 {font-size:.95rem}
+  .mobile-build .match-screen > .bonus-choice p {display:none}
+  .mobile-build .match-screen .choice .card-art {max-height:38dvh;width:auto;margin:auto}
+  .mobile-build .match-screen .choice :is(.goal-choice,.choice-card) {width:auto;max-width:100%}
+  .mobile-build .match-screen .layout>.aside {top:.15rem;max-height:calc(100% - .3rem)}
+  .mobile-build .match-screen > :is(.error,.notice) {z-index:5}
+}
