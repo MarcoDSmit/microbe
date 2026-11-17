@@ -338,3 +338,8 @@ body:has(.match-screen) {background:#07121a url("/board-art/starfield.webp") cen
   .match-screen .summary .welcome-wordmark {width:calc(77% - .25rem)}
   .handoff .welcome-brand {width:min(100%,13rem)}
 }
+
+.guide-heading{display:flex;align-items:center;justify-content:space-between;gap:.4rem}
+.tutorial-exit{display:inline-flex;align-items:center;justify-content:center;min-height:2.4rem;white-space:nowrap}
+.guide-heading .tutorial-exit{padding:.24rem .6rem}
+.guided-match>.choice{grid-row:2;grid-column:1/-1}

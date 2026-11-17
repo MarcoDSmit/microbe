@@ -10,12 +10,17 @@
     main { max-width: 44rem; margin: auto; padding: clamp(.75rem, 4vw, 2rem); }
     .tutorial { display: grid; gap: .8rem; }
     .tutorial nav { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .tutorial-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; }
+    .tutorial-header a { text-decoration:none; }
   </style>
 </head>
 <body>
   <main>
     <article class="panel tutorial" aria-labelledby="tutorial-title">
-      <h1 id="tutorial-title">How to play</h1>
+      <header class="tutorial-header">
+        <h1 id="tutorial-title">How to play</h1>
+        <a href="/" class="secondary tutorial-exit">Exit tutorial</a>
+      </header>
       <p>Welcome to Microbe Wars. Play as Bacteria spreading across four infection sites, or as Host trying to contain them. Start by keeping two of your three secret objectives.</p>
       <p>You get three actions each turn. Play a card, draw from your deck, or take the top card from your discard pile. To pay a card's cost, discard that many other cards from your hand.</p>
       <p>To tuck a card, slide it beneath the card that tucked it. That frees up its space and takes it out of active play.</p>
@@ -23,8 +28,7 @@
       <p>Check each card's synergy for bonus points. When the match ends, add up your card points, tuck points, territory, and secret objectives. The higher score wins.</p>
       <nav aria-label="Game links">
         <a href="/#first-game">My first game</a>
-        <a href="/">Game lobby</a>
-        <a href="rules.html">Full rules</a>
+        <a href="rules.html">Rules and glossary</a>
       </nav>
     </article>
   </main>

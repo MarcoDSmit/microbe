@@ -500,6 +500,7 @@ function renderHandPreview() {
   const card = cardOf(handPreview), legal = game.legal[handPreview];
   return '<dialog class="hand-preview" aria-labelledby="hand-preview-title"><div class="preview-card">' +
     '<div class="card-controls">' + button("Close","closeHandPreview","","secondary") +
+    (firstGameStep !== null ? button("Exit tutorial","exitFirstGame","","secondary tutorial-exit") : "") +
     (legal && !busy && !paymentMode ? button("Play this card","prepare",'data-id="' + safe(handPreview) + '"',"primary") : "") +
     '</div><h2 class="sr-only" id="hand-preview-title">' + safe(card.name) + '</h2>' +
     (legal && legal.cost !== printedCost(handPreview, game.hostBalance) ?
@@ -574,9 +575,9 @@ function render() {
     button("Take top discard","takeDiscard",canSpend && topDiscard && (!guided || step?.type === "takeDiscard") ? 'title="' + safe(topDiscard.name) + '"' : "disabled") : "";
   const status = waiting ? "Waiting for your opponent" : game.status === "objectives" ? "Secret objective setup" :
     game.status === "finished" ? "Match complete" : game.turn === game.faction ? "Your turn" : other(game.faction) + "’s turn";
-  const summary = guided ? '<div class="summary first-game-guide" role="status"><strong>My first game · ' +
-    (step ? (firstGameStep+1) + '/' + firstGameSteps.length : 'Tuck complete') + '</strong><p>' +
-    safe(step?.hint ?? (guideTuckSeen ? "The tucked MRSA adds 1 VP. Finish the walkthrough to see how a full match ends." : "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.")) + '</p></div>' :
+  const summary = guided ? '<div class="summary first-game-guide"><div class="guide-heading"><strong>My first game · ' +
+    (step ? (firstGameStep+1) + '/' + firstGameSteps.length : 'Tuck complete') + '</strong>' + button("Exit tutorial","exitFirstGame","","secondary tutorial-exit") +
+    '</div><p role="status">' + safe(step?.hint ?? (guideTuckSeen ? "The tucked MRSA adds 1 VP. Finish the walkthrough to see how a full match ends." : "Vancomycin tucked MRSA. Tap Vancomycin to see it underneath. This tucked card adds 1 VP.")) + '</p></div>' :
     '<div class="summary"><div><span class="eyebrow">' + (soloFaction ? soloLabel() :
     localMatch ? "Pass &amp; Play" : "Private room " + safe(game.code)) +
     '</span>' + (waiting || game.status === "objectives" ? welcomeBrand() : '<h1>Infection board</h1>') +
@@ -592,7 +593,7 @@ function render() {
     (guided && !step ? button("Finish walkthrough","finishFirstGame","","primary") : "") +
     actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
     (!guided && localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
-    button(guided ? "Exit walkthrough" : localMatch ? "Leave match" : "Leave this tab",guided ? "exitFirstGame" : "leave","","plain") + '</aside>';
+    (guided ? "" : button(localMatch ? "Leave match" : "Leave this tab","leave","","plain")) + '</aside>';
   const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
     button("Copy link","copy") + '</div></div>' : "";
@@ -620,7 +621,7 @@ function render() {
       (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderHandPreview() +
     (inspect ? '<dialog class="hand-preview inspected-card-preview" aria-label="Card details">' +
-      button("Close","closeCardPreview") + cardDetail() + '</dialog>' : '') + '</article>';
+      button("Close","closeCardPreview") + (guided ? button("Exit tutorial","exitFirstGame","","secondary tutorial-exit") : "") + cardDetail() + '</dialog>' : '') + '</article>';
   const board = app.querySelector(".board-focus");
   if (board && !guided) {
     board.dataset.guideStep = String(firstGameStep);
@@ -660,9 +661,9 @@ function render() {
 function firstGameControlAllowed(node) {
   if (firstGameStep === null) return true;
   const { action, id } = node.dataset;
+  if (action === "exitFirstGame") return true;
   if (inspect) return action === "closeCardPreview";
   if (handPreview) return action === "closeHandPreview" || (action === "prepare" && id === guide()?.card);
-  if (action === "exitFirstGame") return true;
   const step = guide();
   if (!step) return guideTuckSeen ? action === "finishFirstGame" : action === "inspect" && id === "H19";
   if (step.type === "objectives") {
