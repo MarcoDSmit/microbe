@@ -10,37 +10,18 @@ const entries = [
   ...data.sites.map(site => ({ ...site, group: "Site" })),
   ...Object.values(data.goals).map(goal => ({ ...goal, group: "Objective" })),
 ];
-const defaultAtlas = "http://127.0.0.1:5180/pathogen-universe/";
-const atlasAddress = document.querySelector("#atlas-address");
+const atlasNotice = document.querySelector("#atlas-notice");
+const showAtlasNotice = () => atlasNotice.showModal();
 const search = document.querySelector("#search");
 const group = document.querySelector("#group");
 const cards = document.querySelector("#cards");
 const reserve = Object.values(data.cards).filter(card => card.copies === 0).map(card => ({...card, group:card.faction}));
 const retiredList = document.querySelector("#retired-cards");
-const status = document.querySelector("#atlas-status");
 const inspector = document.querySelector("#card-inspector");
 const inspectedCard = document.querySelector("#inspected-card");
 const playedKey = libraryStorageKey(location.hash.slice(1));
 let played = readPlayedCards(playedKey);
 let inspected = null;
-
-function parseAtlas(value) {
-  const url = new URL(value);
-  if (!["http:", "https:"].includes(url.protocol) || url.username || url.password) {
-    throw new Error("Enter an HTTP or HTTPS atlas address.");
-  }
-  url.searchParams.delete("organism");
-  url.searchParams.delete("search");
-  return url;
-}
-
-let atlas = parseAtlas(defaultAtlas);
-try {
-  atlas = parseAtlas(localStorage.getItem("microbe-wars-atlas") || defaultAtlas);
-} catch {
-  // An unavailable or invalid saved address falls back to the local atlas.
-}
-atlasAddress.value = atlas.href;
 
 function appendText(parent, tag, text) {
   if (!text) return;
@@ -51,7 +32,6 @@ function appendText(parent, tag, text) {
 }
 
 function render() {
-  document.querySelector("#atlas").href = atlas.href;
   const words = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
   const available = entries.filter(card => group.value ? card.group === group.value : card.number);
   const matchesSearch = card => {
@@ -169,14 +149,11 @@ function cardFace(card, expandable) {
       appendText(article, "p", "Replaced by " + card.replacementId + " · " + card.replacement);
       appendText(article, "p", card.reason);
     }
-    if (card.group === "Bacteria") {
-      const url = new URL(atlas);
-      const related = { "Legionella spp.": "Legionella", "Enterobacter cloacae complex": "Enterobacter cloacae" }[card.identity];
-      url.searchParams.set(related ? "search" : "organism", related || card.identity.toLowerCase().replaceAll(" ", "-"));
-      const link = appendText(article, "a", related ? "Find related atlas entries" : "Open organism in Pathogen Universe");
-      link.href = url.href;
-      link.target = "_blank";
-      link.rel = "noopener";
+    if (card.group === "Bacteria" && !expandable) {
+      const atlas = appendText(article, "button", "Pathogen Universe");
+      atlas.type = "button";
+      atlas.className = "secondary";
+      atlas.addEventListener("click", showAtlasNotice);
     }
     return article;
 }
@@ -198,21 +175,5 @@ window.addEventListener("storage", event => {
 
 search.addEventListener("input", render);
 group.addEventListener("change", render);
-document.querySelector("#atlas-form").addEventListener("submit", event => {
-  event.preventDefault();
-  try {
-    atlas = parseAtlas(atlasAddress.value);
-  } catch (error) {
-    status.textContent = error.message;
-    return;
-  }
-  try {
-    localStorage.setItem("microbe-wars-atlas", atlas.href);
-    status.textContent = "Atlas address saved.";
-  } catch {
-    status.textContent = "Atlas address set for this visit.";
-  }
-  atlasAddress.value = atlas.href;
-  render();
-});
+document.querySelector("#atlas").addEventListener("click", showAtlasNotice);
 render();

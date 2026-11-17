@@ -10,6 +10,11 @@ import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-s
 import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
+for (const link of document.querySelectorAll("[data-game-reference]")) {
+  link.addEventListener("click", () => {
+    try { sessionStorage.setItem("microbe-wars.reference-return", location.pathname + location.search + location.hash); } catch {}
+  });
+}
 const libraryId = librarySession();
 const libraryKey = libraryStorageKey(libraryId);
 if (libraryId) document.querySelector("#library-link").hash = libraryId;

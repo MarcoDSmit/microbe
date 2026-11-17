@@ -6,9 +6,16 @@
   <title>Microbe Wars · Rules and glossary</title>
   <link rel="stylesheet" href="style.css">
   <script type="module" src="preferences.js"></script>
+  <script type="module" src="reference-exit.js"></script>
   <style>
     main { max-width: 54rem; margin: 2rem auto; padding: 0 1rem 2rem; }
     section, nav { margin-top: 1rem; }
+    section[id] { scroll-margin-top: 3.5rem; }
+    .reference-exit {
+      position:sticky;top:0;z-index:1;padding:.35rem max(1rem,env(safe-area-inset-right));
+      background:var(--card);border-bottom:1px solid var(--line);text-align:right;
+    }
+    .reference-exit a {display:inline-block;text-decoration:none}
     h1, h2 { margin-bottom: .55rem; }
     li { margin-block: .3rem; }
     nav { display: flex; flex-wrap: wrap; gap: .45rem 1rem; }
@@ -18,12 +25,13 @@
     @media (max-width: 530px) { dl { display: block; } dt { margin-top: .5rem; } }
     @media print {
       body, .panel { background: white; color: black; }
-      nav { display: none; }
+      nav, .reference-exit { display: none; }
       section { break-inside: avoid; }
     }
   </style>
 </head>
 <body>
+  <header class="reference-exit"><a class="secondary" id="exit-reference" href="/">Exit to game</a></header>
   <main>
     <h1>Microbe Wars rules and glossary</h1>
     <p>Two players. Bacteria and Host compete for the most victory points.</p>
