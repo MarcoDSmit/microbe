@@ -87,3 +87,19 @@ node server.mjs
 ```
 
 The test command is optional. Open `http://127.0.0.1:4178` once the server starts and leave its terminal open while playing. For another device on your own network, set `HOST=0.0.0.0` when starting it and use your computer's LAN address. To use a standalone instance across the internet, run it on an HTTPS web host you control. The Sites build uses D1 for room storage.
+
+## Mobile app preview
+
+The Capacitor package bundles the current board, cards, rules, tutorial, Library, Solo (Normal and Hard), and Pass & Play. Those modes load their card data and artwork locally and save the current match on the device. Online rooms remain available on the hosted web game.
+
+From this folder, install dependencies and prepare the native projects:
+
+```powershell
+npm.cmd ci
+npm.cmd run mobile:sync
+npx.cmd cap open android
+```
+
+Android Studio and the Android SDK are needed to run the Android project on a phone or emulator. For iOS, run the same sync command on a Mac with Xcode (or in macOS CI), then open the project with `npx cap open ios`.
+
+The app identifier is `com.marcodsmit.microbewars`. Verify it before reserving it in the stores. Before submitting a release, test both platforms on actual devices, replace the default app icon and splash assets, review artwork permissions and privacy disclosures, and configure signing in the store accounts. Use TestFlight and Google Play internal testing for the first installable builds.

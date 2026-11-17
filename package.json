@@ -3,13 +3,21 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@netlify/blobs": "^11.0.0"
+    "@netlify/blobs": "^11.0.0",
+    "@capacitor/core": "^8.0.0"
   },
   "scripts": {
     "build": "node scripts/build.mjs",
     "build:netlify": "node scripts/build.mjs --netlify",
     "start": "node server.mjs",
     "test": "node scripts/test.mjs",
-    "validate": "node scripts/validate-artifact.mjs"
+    "validate": "node scripts/validate-artifact.mjs",
+    "build:mobile": "node scripts/build.mjs --mobile",
+    "mobile:sync": "npm run build:mobile && cap sync"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
   }
 }

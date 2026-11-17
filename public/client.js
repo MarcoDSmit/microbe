@@ -2,6 +2,7 @@ import { act, canReachOptimal, matchReplay, newGame, printedCost, view } from "/
 import { nextPlayer, passPlayView } from "/pass-play.js";
 import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
+import mobileCatalog from "/mobile-catalog.js";
 import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "/card-display.js";
 import { printedCardCopy } from "/printed-card-copy.js";
 import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-session.js";
@@ -14,6 +15,8 @@ const safe = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => (
   {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const storeKey = "microbe-wars.seat";
 const passKey = "microbe-wars.pass-play";
+const modeKey = "microbe-wars.mobile-mode";
+const localSaves = mobileCatalog ? localStorage : sessionStorage;
 const soloKey = "microbe-wars.solo";
 const saved = (() => { try { return JSON.parse(sessionStorage.getItem(storeKey)); } catch { return null; } })();
 const fragment = new URLSearchParams(location.hash.slice(1));
@@ -116,7 +119,8 @@ async function transact(path, body, isMove = false) {
 }
 function saveLocal() {
   try {
-    sessionStorage.setItem(soloFaction ? soloKey : passKey,
+    if (mobileCatalog) localSaves.setItem(modeKey, soloFaction ? "#solo" : "#pass-play");
+    localSaves.setItem(soloFaction ? soloKey : passKey,
       JSON.stringify(soloFaction ? {match:localMatch, faction:soloFaction, difficulty:soloDifficulty} : localMatch));
   } catch {
     notice = "This browser could not save the match for refresh.";
@@ -177,16 +181,17 @@ function revealEndTurn() {
 }
 
 function lobby() {
-  const joining = Boolean(incoming.invite && incoming.code);
+  const joining = !mobileCatalog && Boolean(incoming.invite && incoming.code);
   const map = Array.from({length:4}, () => '<div class="sample-node">' + '<span></span>'.repeat(6) + '</div>').join("");
   return '<section class="lobby"><div class="lobby-copy"><span class="eyebrow">Field lab · two players</span>' +
-    '<h1>One board. Two factions.</h1><p>Build a foothold as Bacteria or clear infection sites as Host. Play on one device or invite an opponent.</p>' +
+    '<h1>One board. Two factions.</h1><p>Build a foothold as Bacteria or clear infection sites as Host. ' +
+    (mobileCatalog ? "Play Solo or Pass &amp; Play on this device." : "Play on one device or invite an opponent.") + '</p>' +
     '<div class="sample-map" aria-hidden="true">' + map + '</div></div><div class="panel lobby-panel">' +
     (joining ? '<h2>Join a match</h2><p>You have an invitation to room <strong>' + safe(incoming.code) + '</strong>.</p>' +
       button("Take the open seat","join",busy ? "disabled" : "","primary") :
-      '<h2>Create a match</h2><p class="meta">Each player gets a private six-card hand.</p>' +
+      (mobileCatalog ? '<h2>Play solo</h2>' : '<h2>Create a match</h2><p class="meta">Each player gets a private six-card hand.</p>') +
       '<label for="faction">Your faction</label><select id="faction"><option>Bacteria</option><option>Host</option></select>' +
-      button("Create private room","create",busy ? "disabled" : "","primary") +
+      (mobileCatalog ? "" : button("Create private room","create",busy ? "disabled" : "","primary")) +
       '<label for="solo-difficulty">Bot difficulty</label><select id="solo-difficulty"><option value="normal">Normal</option><option value="hard">Hard</option></select>' +
       button("Play solo vs bot","startSolo",busy ? "disabled" : "","primary") +
       '<hr><h2>Same device</h2><p class="meta">Take turns passing the screen. Hands and objectives are hidden at each handoff.</p>' +
@@ -690,7 +695,10 @@ app.addEventListener("click", async (event) => {
   if (action === "leave") {
     if ((localMatch?.status ?? game.status) !== "finished" &&
         !confirm(localMatch ? "End this match?" : "Leave this match in this tab? You will lose this tab’s saved seat.")) return;
-    sessionStorage.removeItem(soloFaction ? soloKey : localMatch ? passKey : storeKey);
+    if (localMatch) {
+      localSaves.removeItem(soloFaction ? soloKey : passKey);
+      if (mobileCatalog) localSaves.removeItem(modeKey);
+    } else sessionStorage.removeItem(storeKey);
     clearTimeout(botTimer);
     soloFaction = null;
     localMatch = null; revealed = null;
@@ -728,10 +736,11 @@ app.addEventListener("click", async (event) => {
 });
 
 try {
-  data = await request("/api/cards");
-  if (location.hash === "#solo") {
+  data = mobileCatalog ?? await request("/api/cards");
+  const mode = location.hash || (mobileCatalog ? localSaves.getItem(modeKey) : null);
+  if (mode === "#solo") {
     try {
-      const savedSolo = JSON.parse(sessionStorage.getItem(soloKey));
+      const savedSolo = JSON.parse(localSaves.getItem(soloKey));
       if (savedSolo?.match && ["Host","Bacteria"].includes(savedSolo.faction)) {
         localMatch = savedSolo.match;
         soloFaction = savedSolo.faction;
@@ -739,10 +748,10 @@ try {
         syncLocal();
       }
     } catch {}
-  } else if (location.hash === "#pass-play") {
-    try { localMatch = JSON.parse(sessionStorage.getItem(passKey)); } catch { localMatch = null; }
+  } else if (mode === "#pass-play") {
+    try { localMatch = JSON.parse(localSaves.getItem(passKey)); } catch { localMatch = null; }
     if (localMatch) syncLocal();
-  } else if (saved && !incoming.invite && (!incoming.code || incoming.code === saved.code)) {
+  } else if (!mobileCatalog && saved && !incoming.invite && (!incoming.code || incoming.code === saved.code)) {
     seat = saved; await update(false);
   }
   render();

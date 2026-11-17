@@ -21,9 +21,12 @@ const flat = (source) => source.replace(/^import .+;\r?\n/gm, "").replace(/^expo
 files["/local-rules.js"] = "const data = " + data + ";\n" + game.replace(/^import .+;\r?\n/gm, "");
 const { cards: libraryCards, sites: librarySites, goals: libraryGoals } = JSON.parse(data);
 files["/library-data.js"] = "export default " + JSON.stringify({ cards: libraryCards, sites: librarySites, goals: libraryGoals }) + ";\n";
-if (process.argv.includes("--netlify")) {
+const mobile = process.argv.includes("--mobile");
+files["/mobile-catalog.js"] = "export default " + (mobile ? data : "null") + ";\n";
+const staticDirectory = mobile ? "dist/mobile" : process.argv.includes("--netlify") ? "dist/netlify-public" : null;
+if (staticDirectory) {
   for (const [path, content] of Object.entries({...files, ...binary})) {
-    const destination = join("dist/netlify-public", path.slice(1));
+    const destination = join(staticDirectory, path.slice(1));
     await mkdir(dirname(destination), { recursive: true });
     await writeFile(destination, content);
   }
