@@ -38,8 +38,19 @@ const icon = mark => {
   return glyph ? '<i class="match-glyph" role="img" aria-label="' + safe(mark) +
     '" style="color:' + glyph[1] + '">' + glyph[0] + '\uFE0E</i>' : "";
 };
-const button = (text, action, extra = "", cls = "secondary") =>
-  '<button type="button" class="' + cls + '" data-action="' + action + '" ' + extra + '>' + safe(text) + '</button>';
+const buttonArt = new Map([
+  ["Draw 1 card", "draw-one"],
+  ["Take top discard", "take-top-discard"],
+  ["End turn", "end-turn"],
+  ["Leave match", "leave-match"],
+]);
+const button = (text, action, extra = "", cls = "secondary") => {
+  const art = buttonArt.get(text);
+  const label = art ? '<img src="/button-art/' + art + '.webp" alt="' + safe(text) +
+    '" width="854" height="270" draggable="false">' : safe(text);
+  return '<button type="button" class="' + cls + (art ? " art-button" : "") +
+    '" data-action="' + action + '" ' + extra + '>' + label + '</button>';
+};
 const badge = (text, f = "") => '<span class="badge ' + f.toLowerCase() + '">' + safe(text) + '</span>';
 const err = () => error ? '<p class="error" role="alert">' + safe(error) + '</p>' : "";
 

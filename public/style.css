@@ -144,3 +144,13 @@
 .reference-menu summary{cursor:pointer;font-weight:700}
 .reference-menu .panel{position:absolute;z-index:10;top:calc(100% + .35rem);right:0;min-width:10rem;display:grid;gap:.35rem;padding:.6rem;box-shadow:0 .5rem 1.25rem #0002}
 .reference-menu a{display:block;padding:.3rem .4rem}
+button.art-button,.turn-controls button.art-button {
+  display:grid;place-items:center;width:min(100%,12rem);min-width:0;min-height:2.75rem;
+  padding:0;border:0;background:none;border-radius:.4rem;
+}
+button.art-button img {display:block;width:100%;height:auto;pointer-events:none}
+button.art-button:hover:not(:disabled) {background:none;filter:brightness(1.14)}
+button.art-button:active:not(:disabled) {filter:brightness(.9)}
+@media (forced-colors:active) {
+  button.art-button {border:1px solid ButtonText}
+}
