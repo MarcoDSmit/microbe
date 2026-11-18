@@ -10,6 +10,8 @@ import { librarySession, libraryStorageKey, recordPlayedCards } from "/library-s
 import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
+const utility = document.querySelector("#utility-staging .utility");
+let handExpanded = false;
 for (const link of document.querySelectorAll("[data-game-reference]")) {
   link.addEventListener("click", () => {
     try { sessionStorage.setItem("microbe-wars.reference-return", location.pathname + location.search + location.hash); } catch {}
@@ -265,7 +267,7 @@ function lobby() {
     (mobileCatalog ? "" : modeButton("Create private room", "create")) +
     modeButton("My first game", "startFirstGame") + '</div>';
   return '<section class="lobby lunar-lobby"><div class="lobby-copy lunar-console">' +
-    '<h1>' + welcomeBrand() + '</h1><div class="lunar-intro"><h2>One board. Two factions.</h2>' +
+    '<h1>' + welcomeBrand() + '</h1><div class="utility-slot"></div><div class="lunar-intro"><h2>One board. Two factions.</h2>' +
     '<p>Build a foothold as Bacteria or clear infection sites as Host.</p></div>' +
     modes + err() + '</div></section>';
 }
@@ -344,6 +346,21 @@ function inspectList(ids) {
     'data-id="' + safe(id) + '"')).join("") + '</div>' : '<p class="meta">Empty</p>';
 }
 
+const compactBoons = {
+  retrieve: "Recover 1 of your cards from discard",
+  draw: "Draw 1 extra card",
+  discount: "First play costs 1 fewer discard",
+  extraPlay: "Make 1 extra play at usual cost",
+  focusedDraw: "First draw action draws 2 cards",
+  recirculate: "Discard 1 to recover the previous top 2 discards",
+  digest: "Keep 1 of the top 2 deck cards and discard the other",
+  rebate: "Draw 1 after your first paid play here",
+  relocate: "Move 1 of your cards here with its tucked cards",
+  survey: "Look at top 2 deck cards: put 1 on top and 1 on bottom",
+  tradeDraw: "Discard 1 to draw 2",
+  tuckDraw: "Draw 1 when you first tuck an opposing card",
+};
+
 function renderBoard() {
   if (!game.board.some(site => site.id === focusedSite)) focusedSite = game.board[0]?.id;
   const siteButtons = game.board.map(({id}) => button(siteName(id), "siteView",
@@ -381,11 +398,13 @@ function renderBoard() {
     const control = b === h ? (b ? "Contested" : "Unoccupied") :
       (b > h ? "Bacteria" : "Host") + (Math.max(b,h) === 6 ? " full control" : " majority");
     const points = game.sitePoints?.[site.id];
-    const boon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
+    const boon = game.uniqueSiteBoons ? info.boon : info.legacyBoon ?? info.boon;
+    const fullBoon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
     const siteFace = '<div class="site-face" style="--site-art:url(/board-art/' + safe(site.id) + '.webp)">' +
       '<div class="site-live"><h3>' + safe(info.name) + '</h3><span>' + control + ' · ' + occupied.length + '/6</span>' +
       (points ? '<span>Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</span>' : '') +
-      '</div><p class="site-boon">' + safe(boon) + '</p>' +
+      '</div><p class="site-boon" title="' + safe(fullBoon) + '"><strong>Start-turn majority:</strong> ' +
+      safe(compactBoons[boon] ?? fullBoon) + '</p>' +
       '<span class="sr-only">' + safe(info.bacteriaSynergy + ' ' + info.hostSynergy) + '</span></div>';
     const overflow = cells.length > 6 ? '<div class="grid extra-card-slots">' + cells.slice(6).join("") + '</div>' : "";
     return '<section class="node" data-board-site="' + safe(site.id) + '">' + siteFace +
@@ -463,8 +482,8 @@ function decision() {
 }
 
 function renderHand() {
-  const layout = 'style="--hand-peeks:' + Math.max(0, game.hand.length - 1) + '"';
-  return '<section class="hand-panel" aria-label="Cards in hand"><div class="hand' +
+  const layout = 'style="--hand-peeks:' + Math.max(0, game.hand.length - 1) + ';--hand-count:' + game.hand.length + '"';
+  return '<section class="hand-panel" aria-label="Cards in hand"><div class="hand' + (handExpanded ? " expanded" : "") +
     (game.hand.length === 1 ? ' one-card' : '') + '" ' + layout + '>' + game.hand.map((id) => {
       const card = cardOf(id), paying = payment.has(id), active = picked === id;
       const canPay = paymentMode && !active;
@@ -475,7 +494,8 @@ function renderHand() {
         '<button type="button" class="hand-peek" data-action="' + (canPay ? "payHand" : "previewHand") +
         '" data-id="' + safe(id) + '" aria-label="' + safe(label) + '" title="' + safe(label) + '"' +
         (canPay ? ' aria-pressed="' + paying + '"' : ' aria-haspopup="dialog"') + '>' +
-        cardArt(id) + '</button></article>';
+        cardArt(id) + '<span class="hand-caption"><b>' + safe(card.name.split(" — ")[0]) +
+        '</b><span aria-hidden="true">' + (game.legal[id]?.cost ?? card.cost) + '</span></span></button></article>';
     }).join("") + '</div></section>';
 }
 
@@ -495,9 +515,7 @@ function renderHandPreview() {
   if (!game.hand.includes(handPreview)) handPreview = null;
   if (!handPreview) return "";
   return '<dialog class="hand-preview image-preview" aria-label="Enlarged card">' +
-    zoomCard(handPreview,"closeHandPreview") +
-    (firstGameStep !== null && game.legal[handPreview] ?
-      button("Play this card","prepare",'data-id="' + safe(handPreview) + '"',"primary") : "") + '</dialog>';
+    zoomCard(handPreview,"closeHandPreview") + '</dialog>';
 }
 
 function renderScore() {
@@ -523,7 +541,9 @@ function renderPublicPoints(status) {
   return '<div class="panel public-points"><strong class="board-points-label">Board points</strong>' +
     badge("Bacteria " + bacteria + " VP","Bacteria") + badge("Host " + host + " VP","Host") +
     (game.status === "playing" && game.turn === game.faction ?
-      '<strong class="actions-left">' + game.slots + (game.actionRules ? " actions left" : " plays left") + '</strong>' : '<span class="actions-left">' + safe(status) + '</span>') + '</div>';
+      '<strong class="actions-left">' + game.slots + (game.actionRules ? " actions left" : " plays left") + '</strong>' : '<span class="actions-left">' + safe(status) + '</span>') +
+    (game.status === "playing" ? button(handExpanded ? "Shrink hand" : "Expand hand", "toggleHand",
+      'aria-pressed="' + handExpanded + '"', "hand-size") : "") + '</div>';
 }
 
 function render() {
@@ -558,7 +578,12 @@ function render() {
       '<div>' + button("Back to lobby","leave") + '</div></article>';
     return;
   }
-  if (!game) { app.innerHTML = lobby(); return; }
+  if (!game) {
+    handExpanded = false;
+    app.innerHTML = lobby();
+    app.querySelector(".utility-slot").append(utility);
+    return;
+  }
   const waiting = game.status === "waiting";
   const inv = seat?.invite ? location.origin + "/#room=" + seat.code + "&invite=" + seat.invite : "";
   const step = guide();
@@ -584,9 +609,15 @@ function render() {
     '</div></div>';
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
     (guided && !step ? button("Finish walkthrough","finishFirstGame","","primary") : "") +
-    actionButtons + (game.status === "playing" ? button("End turn","end",canEnd ? "" : "disabled","primary") : "") +
-    (!guided && localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
-    (guided ? "" : button(localMatch ? "Leave match" : "Leave this tab","leave","","plain")) + '</aside>';
+    (!paymentMode ? actionButtons + (game.status === "playing" ?
+      button("End turn","end",canEnd ? "" : "disabled","primary") : "") : "") + '</aside>';
+  const matchMenu = '<details class="match-menu"' + (app.querySelector(".match-menu")?.open ? ' open' : '') +
+    '><summary aria-label="Match menu" title="Match menu">▾</summary><div class="panel match-menu-panel">' +
+    (game.status === "playing" ? summary : "") + '<div class="utility-slot"></div>' +
+    (game.status === "playing" ? [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
+      button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") : "") +
+    (localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
+    button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") + '</div></details>';
   const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
     button("Copy link","copy") + '</div></div>' : "";
@@ -603,17 +634,18 @@ function render() {
   const focusedAction = focused?.action, focusedId = focused?.id;
   const discards = '<div class="panel detail"><h2>Your discard pile</h2>' + inspectList([...game.discard].reverse()) +
     '<h2>Opponent discard pile</h2>' + inspectList([...game.opponentDiscard].reverse()) + '</div>';
-  app.innerHTML = '<article class="game match-screen' + (guided ? ' guided-match' : '') + '">' + summary + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
-    invite + renderScore() + decision() + '<nav class="side-menu" aria-label="Match information">' +
-    [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
-      button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") +
-    '</nav><div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
+  app.innerHTML = '<article class="game match-screen' + (guided ? ' guided-match' : '') +
+    (!guided && game.status === "playing" ? ' compact-match' : '') +
+    (handExpanded ? ' hand-expanded' : '') + '">' +
+    (guided || game.status !== "playing" ? summary : "") + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
+    invite + renderScore() + decision() + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
     renderBoard() + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
-      (sidePanel === "objectives" ? objectives : discards) +
+      button("Close","panel",'data-id="' + sidePanel + '"') + (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderHandPreview() +
     (inspect ? '<dialog class="hand-preview image-preview inspected-card-preview" aria-label="Card details">' +
       cardDetail() + '</dialog>' : '') + '</article>';
+  app.querySelector(".utility-slot")?.append(utility);
   const board = app.querySelector(".board-focus");
   if (board && !guided) {
     board.dataset.guideStep = String(firstGameStep);
@@ -652,9 +684,9 @@ function render() {
 function firstGameControlAllowed(node) {
   if (firstGameStep === null) return true;
   const { action, id } = node.dataset;
-  if (action === "exitFirstGame") return true;
+  if (action === "exitFirstGame" || action === "toggleHand") return true;
   if (inspect) return action === "closeCardPreview";
-  if (handPreview) return action === "closeHandPreview" || (action === "prepare" && id === guide()?.card);
+  if (handPreview) return action === "closeHandPreview";
   const step = guide();
   if (!step) return guideTuckSeen ? action === "finishFirstGame" : action === "inspect" && id === "H19";
   if (step.type === "objectives") {
@@ -688,10 +720,14 @@ function isPaymentCard(id) {
 }
 
 function beginDrag(id) {
-  if (firstGameStep !== null || paymentMode || busy || !game?.legal[id]) return false;
+  if (paymentMode || busy || !game?.legal[id]) return false;
+  const step = guide();
+  if (firstGameStep !== null && (step?.type !== "play" || step.card !== id)) return false;
   dragged = id;
   app.querySelectorAll('[data-action="place"]').forEach(node => {
-    if (game.legal[id].sites.includes(node.dataset.site)) node.classList.add("drop-target");
+    if (game.legal[id].sites.includes(node.dataset.site) && (firstGameStep === null || node.dataset.site === step.site)) {
+      node.classList.add("drop-target");
+    }
   });
   return true;
 }
@@ -731,7 +767,7 @@ let touchDrag = null;
 let suppressTapUntil = 0;
 app.addEventListener("pointerdown", event => {
   const hand = event.target.closest("[data-drag-card]");
-  if (event.pointerType !== "touch" || !event.isPrimary || !hand || firstGameStep !== null) return;
+  if (event.pointerType !== "touch" || !event.isPrimary || !hand) return;
   touchDrag = {id:event.pointerId, card:hand.dataset.dragCard, x:event.clientX, y:event.clientY, hand, ghost:null};
 });
 app.addEventListener("pointermove", event => {
@@ -905,7 +941,18 @@ app.addEventListener("click", async (event) => {
   if (action === "refugeMove") return move({ type:"refuge",
     ...(game.pending?.self ? {} : { protector:[...selected][0] }), destination:id });
   if (action === "place") return placeCard(site, slot);
-  if (action === "panel") { sidePanel = sidePanel === id ? null : id; render(); return; }
+  if (action === "toggleHand") {
+    handExpanded = !handExpanded;
+    render();
+    app.querySelector('[data-action="toggleHand"]')?.focus({preventScroll:true});
+    return;
+  }
+  if (action === "panel") {
+    sidePanel = sidePanel === id ? null : id;
+    if (app.querySelector(".match-menu")) app.querySelector(".match-menu").open = false;
+    render();
+    return;
+  }
   if (action === "inspect") { inspect = id; render(); return; }
   if (action === "clear") { picked = null; dropSpace = null; payment.clear(); paymentMode = false; render(); return; }
   if (action === "option") {
@@ -913,10 +960,6 @@ app.addEventListener("click", async (event) => {
     if (selected.has(id)) selected.delete(id);
     else if (max === 1) selected = new Set([id]);
     else if (selected.size < max) selected.add(id);
-    render(); return;
-  }
-  if (action === "prepare" && game.legal[id]) {
-    handPreview = null; picked = id; dropSpace = null; payment.clear(); paymentMode = game.legal[id].cost > 0;
     render(); return;
   }
 });

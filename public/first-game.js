@@ -1,9 +1,9 @@
 export const firstGameSteps = [
   { type:"objectives", hint:"Choose any two of these three Bacteria objectives. They’re secret in a regular match." },
   { type:"play", card:"B02", site:"N09", pay:[],
-    hint:"This is your hand. The four sites change each game. Open Staphylococcus epidermidis and play it at Skin & Soft Tissue. It costs 0 cards and uses one action." },
+    hint:"This is your hand. The four sites change each game. Drag Staphylococcus epidermidis from your hand to an open space at Skin & Soft Tissue. Tap a card to enlarge it, then tap it again to return it to your hand. It costs 0 cards and uses one action." },
   { type:"play", card:"B32", site:"N06", pay:["B40","B25"],
-    hint:"Staphylococcus epidermidis grants a bonus Staphylococcus play. Open MRSA and pay its cost of 2 with Serratia first, then Klebsiella. Play MRSA at Heart for its synergy." },
+    hint:"Staphylococcus epidermidis grants a bonus Staphylococcus play. Drag MRSA to Heart for its synergy. Then tap Serratia and Klebsiella, in that order, to pay." },
   { type:"drawCard",
     hint:"Check the O, A and R strips on the cards. Different bacteria match different antibiotics. Now spend an action to draw from your deck." },
   { type:"takeDiscard",
@@ -11,7 +11,7 @@ export const firstGameSteps = [
   { type:"end",
     hint:"Klebsiella is back at the left of your hand. You’ve tried all three actions. End your turn and take over as Host." },
   { type:"play", card:"H19", site:"N06", pay:["H01","H04","H07","H10"],
-    hint:"This is the Host hand. Open Vancomycin IV standard. Pay with Neutrophil, Macrophage, Complement and B lymphocyte, then play it in an open space at Heart. The square in MRSA’s O column lets vancomycin tuck it." },
+    hint:"This is the Host hand. Drag Vancomycin IV standard to an open space at Heart, then tap Neutrophil, Macrophage, Complement and B lymphocyte to pay. The square in MRSA’s O column lets vancomycin tuck it." },
 ];
 
 const seed = 1879;

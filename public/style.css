@@ -465,3 +465,90 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   .mobile-build .board-focus .site-face {min-height:2.25rem}
   .mobile-build .board-focus .site-trays {width:min(100%,160cqh,34rem)}
 }
+/* Put match tools beside the site tabs and keep the board as the main surface. */
+.lunar-lobby {min-height:100dvh}
+.lunar-console .utility {justify-content:flex-start;gap:.35rem}
+.utility :is(.reference-menu,.settings) > summary,.match-menu > summary {
+  display:grid;place-items:center;list-style:none;width:3rem;min-height:2rem;
+  color:#eaf9ff;background:#142430 url("/board-art/score-banner.webp") center / 100% 100% no-repeat;
+  cursor:pointer;
+}
+.utility :is(.reference-menu,.settings) > summary::-webkit-details-marker,
+.match-menu > summary::-webkit-details-marker {display:none}
+.lunar-console .utility .panel {left:0;right:auto;color:var(--ink)}
+.match-screen {position:relative}
+.match-menu {position:absolute;z-index:5;top:.35rem;right:.5rem}
+.match-menu > summary {margin-left:auto}
+.match-menu-panel {
+  position:absolute;right:0;top:calc(100% + .2rem);width:min(21rem,94vw);
+  padding:.5rem;display:flex;flex-wrap:wrap;gap:.4rem;color:#edf7ff;background:#111e28;
+  border-color:#526c7e;box-shadow:0 .4rem 1rem #000b;
+}
+.match-menu-panel .summary {width:100%}
+.match-menu-panel .summary h1 {display:none}
+.match-menu-panel .badge {color:var(--ink)}
+.match-menu-panel .utility {justify-content:start;gap:.25rem}
+.match-menu-panel .utility .panel {color:var(--ink)}
+.match-menu-panel .plain {color:#edf7ff}
+.match-screen:not(.guided-match) > .summary,.match-screen:not(.guided-match) .site-navigation {padding-right:3.3rem}
+.board .site-live {font-size:.84rem}
+.board .site-boon {font-size:.8rem}
+.board-focus .site-face,.board-focus .site-trays {width:100%;max-width:none}
+.board-focus .site-face {aspect-ratio:5 / 1;grid-template-rows:1fr auto;max-height:none}
+.board .site-boon {margin-bottom:.25rem}
+.hand-size {
+  font-size:.8rem;padding:.15rem .4rem;color:#f3f8fc;background:#122532;
+  border:1px solid #698ca1;border-radius:.3rem;line-height:1.15;min-height:1.75rem;
+}
+.hand-caption {
+  position:absolute;inset:auto .12rem .15rem 0;display:flex;align-items:center;
+  justify-content:space-between;gap:.2rem;min-width:0;padding:.2rem .26rem;
+  background:#0b1722f5;color:#f3f8fc;border:1px solid #627d91;border-radius:.24rem;
+  font-size:.76rem;line-height:1.15;
+}
+.hand-caption b {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hand-caption span {font-weight:750;color:#ffdc8b}
+.hand-card.payment .hand-caption {background:#563816;color:white}
+.hand-dock .hand.expanded {
+  --peek-height:46dvh;--card-width:calc(var(--peek-height) * .714);
+  grid-template-columns:repeat(var(--hand-peeks),minmax(3.5rem,1fr)) var(--card-width);
+  overflow-x:auto;
+}
+.hand-dock .hand.expanded.one-card {grid-template-columns:var(--card-width)}
+.hand.expanded .hand-peek .card-art {height:100%;object-fit:contain;object-position:left top}
+.hand.expanded .hand-caption {inset:0 .12rem auto 0}
+.hand.expanded .hand-card:last-child .hand-caption {max-width:var(--card-width)}
+@media (orientation:landscape) and (max-height:520px) {
+  body:has(.match-screen) {height:100dvh;overflow:hidden}
+  .mobile-build body:has(.match-screen) {display:block}
+  #app:has(.match-screen) {height:100%;min-height:0}
+  .match-screen {width:100%;position:relative;height:100%;padding:.25rem .5rem .4rem;gap:.25rem;grid-template-rows:auto minmax(0,1fr)}
+  .match-screen.compact-match {grid-template-rows:minmax(0,1fr)}
+  .match-screen .layout {min-height:0;height:100%;display:block}
+  .mobile-build .compact-match .layout {grid-row:1}
+  .match-screen .tabletop {height:100%;min-height:0;grid-template-rows:minmax(0,1fr) auto;gap:.25rem}
+  .match-screen .board-content {min-height:0;grid-template-rows:auto minmax(0,1fr);gap:.15rem}
+  .match-screen .board-focus {height:100%;min-height:0}
+  .match-screen .board-focus .node {padding:.2rem;min-height:100%;--site-height:clamp(3.3rem,36cqh,7.25rem)}
+  .match-screen .board-focus .site-face {
+    width:100%;grid-template-rows:1fr auto;min-height:3.3rem;height:var(--site-height);
+    aspect-ratio:auto;padding:0;background-size:cover;
+  }
+  .match-screen .board-focus .site-trays {width:100%;height:clamp(2.45rem,calc(100cqh - var(--site-height) - .8rem),14rem)}
+  .match-screen .board-focus .card-tray {aspect-ratio:auto}
+  .match-screen .board .site-live {align-self:start}
+  .match-screen .board .site-live,.match-screen .board .site-boon {padding:.1rem .25rem}
+  .match-screen .hand-and-controls {grid-template-columns:minmax(0,1fr) clamp(6.5rem,15vw,9rem);gap:.3rem}
+  .match-screen .turn-controls {grid-template-columns:minmax(0,1fr);align-self:start;gap:.12rem}
+  .match-screen .turn-controls button,.match-screen .turn-controls .art-button {min-height:1.85rem;height:1.85rem}
+  .match-screen .turn-controls .art-button img {width:100%;height:100%;object-fit:fill}
+  .match-screen .hand-dock .public-points {min-height:1.85rem}
+  .match-screen .layout > .aside {
+    position:absolute;z-index:4;inset:.2rem .5rem auto;max-height:calc(100% - .4rem);
+    overflow:auto;overscroll-behavior:contain;
+  }
+  .match-screen.hand-expanded .board-focus .node {--site-height:3.3rem}
+  .guided-match.hand-expanded .board-focus {overflow-y:auto}
+  .lunar-lobby {min-height:100dvh}
+  .lunar-console .utility :is(.reference-menu,.settings) > summary {min-height:1.85rem}
+}
