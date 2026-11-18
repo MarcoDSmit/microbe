@@ -552,3 +552,31 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   .lunar-lobby {min-height:100dvh}
   .lunar-console .utility :is(.reference-menu,.settings) > summary {min-height:1.85rem}
 }
+.match-links {width:100%}
+.match-links .panel {
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.3rem;
+  padding:0;border:0;background:transparent;
+}
+.match-links img {display:block;width:100%;height:auto}
+.match-settings {position:absolute;z-index:6;top:.35rem;right:3.7rem}
+.match-settings .reference-menu {display:none}
+.match-settings:not(:has(.settings[open])) {visibility:hidden}
+.match-settings .settings .panel {max-height:calc(100dvh - 3rem);overflow:auto}
+.match-objectives {min-width:0}
+.match-objective-cards {
+  --objective-height:clamp(6rem,48dvh,12rem);
+  display:flex;gap:.6rem;overflow-x:auto;padding-block:.25rem;
+}
+.match-objective-cards .objective-card {
+  flex:0 0 calc(var(--objective-height) * 5 / 7 + .5rem);
+  margin:0;padding:.2rem;text-align:center;
+}
+.match-objective-cards .card-art {
+  width:100%;height:var(--objective-height);margin:0 auto;object-fit:contain;
+}
+.match-objective-cards .objective-status {font-size:.78rem;margin-top:.2rem}
+.touch-drag-card {object-fit:contain}
+@media (orientation:landscape) and (max-height:520px) {
+  .match-screen .layout > .aside:has(.match-objectives) {max-height:calc(100% - 6.75rem)}
+  .match-screen .turn-controls .art-button-label {font-size:.85rem}
+}

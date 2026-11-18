@@ -10,7 +10,7 @@ function load() {
 
 function apply(preferences) {
   const dark = matchMedia("(prefers-color-scheme: dark)").matches;
-  const scale = Math.max(90, Math.min(150, Number(preferences.size) || 100));
+  const scale = Math.max(90, Math.min(150, Number(preferences.size) || 90));
   root.dataset.theme = dark ? "dark" : "light";
   root.style.fontSize = (15 * scale / 100) + "px";
   if (size) size.value = scale;

@@ -39,7 +39,8 @@ let referenceOpen = false;
 let fade = null;
 
 const gain = slider => Number(slider.value) / 100;
-const volume = (audio, slider) => levels.get(audio) * gain(slider);
+const volume = (audio, slider) =>
+  levels.get(audio) * gain(slider) * (slider === musicSlider ? 1.05 : 0.9);
 
 function restoreVolume(slider, update) {
   const key = `microbe-wars.audio.${slider.id}`;

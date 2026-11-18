@@ -457,10 +457,30 @@ export function matchReplay(s) {
   };
 }
 
+function canUndo(s, f) {
+  const checkpoint = s.undoCheckpoint;
+  return s.status === "playing" && s.turn === f && (!s.pending || s.pending.f === f) &&
+    checkpoint?.faction === f &&
+    checkpoint.turn === s.turnNumber;
+}
+
 export function act(s, f, action) {
+  if (action?.type === "undo") {
+    requireRule(canUndo(s, f), "There is no action to undo this turn.");
+    const { boardState, actionCount } = s.undoCheckpoint;
+    const recording = s.recording;
+    recording.actions.length = actionCount;
+    for (const key of Object.keys(s)) delete s[key];
+    Object.assign(s, boardState, { recording });
+    return s;
+  }
   if (action?.type === "rematch") return applyAction(s, f, action);
   const start = s.recording ? null : structuredClone(s);
   const pending = s.pending?.kind ?? null;
+  const checkpoint = s.status === "playing" && s.turn === f &&
+    ["play", "drawCard", "takeDiscard"].includes(action?.type) ?
+    structuredClone(Object.fromEntries(Object.entries(s).filter(([key]) =>
+      key !== "recording" && key !== "undoCheckpoint"))) : null;
   const result = applyAction(s, f, action);
   const recording = result.recording ??= { start, actions: [], partial: start.turnNumber > 0 ||
     sides.some(side => start.players[side].goals.length > 0) };
@@ -471,6 +491,12 @@ export function act(s, f, action) {
     else if (Array.isArray(value) && ["pay", "selected"].includes(field)) {
       move[field] = value.filter(id => typeof id === "string");
     }
+  }
+  if (action.type === "end" || result.status !== "playing" || result.turnNumber !== s.undoCheckpoint?.turn) {
+    delete result.undoCheckpoint;
+  }
+  if (checkpoint && result.status === "playing" && result.turnNumber === checkpoint.turnNumber) {
+    result.undoCheckpoint = { faction:f, turn:result.turnNumber, boardState:checkpoint, actionCount:recording.actions.length };
   }
   recording.actions.push({ faction: f, pending, action: move });
   return result;
@@ -730,6 +756,6 @@ export function view(s, f) {
     objectivePoints:Object.fromEntries(player.goals.map(id => [id, goalScore(s, f, id)])),
     opponentHandCount:rival.hand.length, opponentDeckCount:rival.deck.length, opponentDiscard:rival.discard,
     opponentGoals:s.status === "finished" ? rival.goals : null, offer:player.offer,
-    pending, legal, scores:s.scores, reason:s.reason ?? null,
+    pending, legal, canUndo:canUndo(s,f), scores:s.scores, reason:s.reason ?? null,
   };
 }

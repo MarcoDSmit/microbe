@@ -12,6 +12,31 @@ import { updateGameAudio } from "/game-audio.js";
 const app = document.querySelector("#app");
 const utility = document.querySelector("#utility-staging .utility");
 let handExpanded = false;
+const referenceMenu = utility.querySelector(".reference-menu");
+const referenceLinks = referenceMenu.querySelector(".panel");
+const settingsMenu = utility.querySelector(".settings");
+
+referenceMenu.addEventListener("toggle", () => {
+  if (referenceMenu.open) settingsMenu.open = false;
+});
+settingsMenu.addEventListener("toggle", () => {
+  if (!settingsMenu.open) return;
+  referenceMenu.open = false;
+  app.querySelector(".match-menu")?.removeAttribute("open");
+});
+
+function mountUtility(container, matchMenu) {
+  if (!matchMenu) {
+    referenceMenu.append(referenceLinks);
+    container?.append(utility);
+    return;
+  }
+  matchMenu.querySelector(".match-links").append(referenceLinks);
+  container.append(utility);
+  matchMenu.addEventListener("toggle", () => {
+    if (matchMenu.open) settingsMenu.open = false;
+  });
+}
 for (const link of document.querySelectorAll("[data-game-reference]")) {
   link.addEventListener("click", () => {
     try { sessionStorage.setItem("microbe-wars.reference-return", location.pathname + location.search + location.hash); } catch {}
@@ -65,7 +90,7 @@ const buttonArt = new Map([
   ["Leave this tab", "leave-this-tab"],
 ]);
 const buttonFrames = new Map([
-  ["prepare", "play-frame"],
+  ["undo", "confirm-frame"],
   ["startSolo", "play-frame"],
   ["join", "confirm-frame"],
   ["confirmDrop", "play-frame"],
@@ -581,7 +606,7 @@ function render() {
   if (!game) {
     handExpanded = false;
     app.innerHTML = lobby();
-    app.querySelector(".utility-slot").append(utility);
+    mountUtility(app.querySelector(".utility-slot"));
     return;
   }
   const waiting = game.status === "waiting";
@@ -610,23 +635,27 @@ function render() {
   const turnControls = '<aside class="status-actions turn-controls" aria-label="Turn controls">' + renderPayment() +
     (guided && !step ? button("Finish walkthrough","finishFirstGame","","primary") : "") +
     (!paymentMode ? actionButtons + (game.status === "playing" ?
-      button("End turn","end",canEnd ? "" : "disabled","primary") : "") : "") + '</aside>';
+      button("End turn","end",canEnd ? "" : "disabled","primary") +
+      (!guided && handExpanded && game.turn === game.faction ?
+        button("Undo","undo",game.canUndo && !busy ? "" : "disabled") : "") : "") : "") + '</aside>';
   const matchMenu = '<details class="match-menu"' + (app.querySelector(".match-menu")?.open ? ' open' : '') +
     '><summary aria-label="Match menu" title="Match menu">▾</summary><div class="panel match-menu-panel">' +
-    (game.status === "playing" ? summary : "") + '<div class="utility-slot"></div>' +
+    (game.status === "playing" ? summary : "") + '<div class="match-links"></div>' +
+    button("Settings","matchSettings") +
     (game.status === "playing" ? [["objectives","Objectives"],["discards","Discards"]].map(([id,label]) =>
       button(label,"panel",'data-id="' + id + '" aria-expanded="' + (sidePanel === id) + '"')).join("") : "") +
     (localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
-    button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") + '</div></details>';
+    button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") +
+    '</div></details><div class="utility-slot match-settings"></div>';
   const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
     button("Copy link","copy") + '</div></div>' : "";
-  const objectives = '<div class="panel detail"><h2>Your objectives</h2>' +
-    (game.goals.length ? game.goals.map((id) => {
+  const objectives = '<div class="panel detail match-objectives"><h2>Your objectives</h2>' +
+    (game.goals.length ? '<div class="match-objective-cards">' + game.goals.map((id) => {
       const goal = data.goals[id], points = game.objectivePoints?.[id] ?? 0;
       return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '">' + objectiveFace(goal) + '<p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
-    }).join("") : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
+    }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const previousBoard = app.querySelector(".board-focus");
   const boardScroll = previousBoard && previousBoard.dataset.guideStep === String(firstGameStep) ? previousBoard.scrollTop : null;
@@ -645,7 +674,7 @@ function render() {
       '</aside>' : '') + '</div>' + renderHandPreview() +
     (inspect ? '<dialog class="hand-preview image-preview inspected-card-preview" aria-label="Card details">' +
       cardDetail() + '</dialog>' : '') + '</article>';
-  app.querySelector(".utility-slot")?.append(utility);
+  mountUtility(app.querySelector(".utility-slot"), app.querySelector(".match-menu"));
   const board = app.querySelector(".board-focus");
   if (board && !guided) {
     board.dataset.guideStep = String(firstGameStep);
@@ -750,6 +779,13 @@ app.addEventListener("dragstart", event => {
   const id = event.target.closest("[data-drag-card]")?.dataset.dragCard;
   if (!id) return;
   if (!beginDrag(id)) { event.preventDefault(); return; }
+  const ghost = dragImage(event.target.closest("[data-drag-card]"));
+  if (ghost) {
+    ghost.style.left = event.clientX + "px";
+    ghost.style.top = event.clientY + "px";
+    event.dataTransfer.setDragImage(ghost, ghost.offsetWidth / 2, ghost.offsetHeight / 2);
+    requestAnimationFrame(() => ghost.remove());
+  }
   event.dataTransfer.setData("text/plain", id);
   event.dataTransfer.effectAllowed = "move";
 });
@@ -762,6 +798,23 @@ app.addEventListener("drop", event => {
   event.preventDefault();
   dropCard(event.target.closest(".drop-target"));
 });
+
+function dragImage(hand, target = null) {
+  const slot = target ?? [...app.querySelectorAll(".drop-target")].find(node => node.getBoundingClientRect().height);
+  if (!slot) return null;
+  const ghost = hand.querySelector(".card-art").cloneNode();
+  ghost.className = "touch-drag-card";
+  ghost.alt = "";
+  sizeDragImage(ghost, slot);
+  document.body.append(ghost);
+  return ghost;
+}
+
+function sizeDragImage(ghost, slot) {
+  const { width, height } = slot.getBoundingClientRect();
+  ghost.style.width = width + "px";
+  ghost.style.height = height + "px";
+}
 
 let touchDrag = null;
 let suppressTapUntil = 0;
@@ -776,11 +829,11 @@ app.addEventListener("pointermove", event => {
   if (!touch.ghost) {
     if (Math.hypot(event.clientX - touch.x, event.clientY - touch.y) < 9) return;
     if (!beginDrag(touch.card)) { touchDrag = null; return; }
-    touch.ghost = touch.hand.querySelector(".card-art").cloneNode();
-    touch.ghost.className = "touch-drag-card";
-    touch.ghost.alt = "";
-    document.body.append(touch.ghost);
+    touch.ghost = dragImage(touch.hand);
+    if (!touch.ghost) { clearDrag(); touchDrag = null; return; }
   }
+  const target = document.elementFromPoint(event.clientX, event.clientY)?.closest(".drop-target");
+  if (target) sizeDragImage(touch.ghost, target);
   touch.ghost.style.left = event.clientX + "px";
   touch.ghost.style.top = event.clientY + "px";
 });
@@ -929,6 +982,13 @@ app.addEventListener("click", async (event) => {
     error = ""; notice = ""; incoming.code = null; incoming.invite = null;
     history.replaceState(null,"","/"); render(); return;
   }
+  if (action === "matchSettings") {
+    app.querySelector(".match-menu").open = false;
+    settingsMenu.open = true;
+    settingsMenu.querySelector("summary").focus();
+    return;
+  }
+  if (action === "undo") return move({type:"undo"});
   if (action === "end") return move({ type:"end" });
   if (action === "drawCard" || action === "takeDiscard") return move({ type:action });
   if (action === "skipBonus") return move({ type:"skipBonus" });
