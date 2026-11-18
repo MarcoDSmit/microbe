@@ -293,7 +293,7 @@ function lobby() {
     modeButton("My first game", "startFirstGame") + '</div>';
   return '<section class="lobby lunar-lobby"><div class="lobby-copy lunar-console">' +
     '<h1>' + welcomeBrand() + '</h1><div class="utility-slot"></div><div class="lunar-intro"><h2>One board. Two factions.</h2>' +
-    '<p>Build a foothold as Bacteria or clear infection sites as Host.</p></div>' +
+    '<p>Beneath the limits of human perception is a universe of organisms waiting to be explored. Learn about bacteria and the way we fight infections by playing this game</p></div>' +
     modes + err() + '</div></section>';
 }
 const cardTitle = (c) => c.faction === "Bacteria" ? c.identity : c.name.split(" — ")[0];
