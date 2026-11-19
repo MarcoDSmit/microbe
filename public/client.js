@@ -11,7 +11,7 @@ import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
 const utility = document.querySelector("#utility-staging .utility");
-let handExpanded = false;
+let handExpanded = true;
 const referenceMenu = utility.querySelector(".reference-menu");
 const referenceLinks = referenceMenu.querySelector(".panel");
 const settingsMenu = utility.querySelector(".settings");
@@ -598,7 +598,7 @@ function render() {
     return;
   }
   if (!game) {
-    handExpanded = false;
+    handExpanded = true;
     app.innerHTML = lobby();
     mountUtility(app.querySelector(".utility-slot"));
     return;
