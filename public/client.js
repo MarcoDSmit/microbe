@@ -322,7 +322,7 @@ function strip(card) {
 }
 function cardArt(id, className = "", alt = "") {
   return '<img class="card-art ' + className + '" src="' + safe(cardArtUrl(id)) +
-    '" alt="' + safe(alt) + '" width="750" height="1050" loading="lazy" decoding="async" draggable="false">';
+    '" alt="' + safe(alt) + '" width="800" height="1120" loading="lazy" decoding="async" draggable="false">';
 }
 
 function cardDetail() {
@@ -344,19 +344,13 @@ function cardDetail() {
   if (play?.rail && card.faction === "Bacteria" && site) {
     const value = data.matrix[play.id]?.[card.id];
     const remote = game.hostBalance && value === "OPTIMAL" && canReachOptimal(play.id);
-    const requiredSite = play.id === "H39" ? "N02" : play.id === "H42" ? "N03" : null;
-    const outside = requiredSite && site.id !== requiredSite && !remote;
-    match = '<p><b>Match preview</b> · ' + (outside ? "Treatment is outside its site scope." :
-      value === "TRIGGER" ? "Resistance response." : ["OPTIMAL","ACTIVE"].includes(value) ?
-        (remote ? "Optimal match. On play, you may choose one remote Optimal target instead of the local attack." +
-          (requiredSite ? " Play the antibiotic at " + safe(siteName(requiredSite)) + "." : "") :
-          safe(value[0] + value.slice(1).toLowerCase()) + " match. Check the ability and defenses.") : "No matching action.") + '</p>';
+    match = '<p><b>Match preview</b> · ' +
+      (value === "TRIGGER" ? "Resistance response." : ["OPTIMAL","ACTIVE"].includes(value) ?
+        (remote ? "Optimal match. On play, you may choose one remote Optimal target instead of the local attack." :
+          safe(value[0] + value.slice(1).toLowerCase()) + " match.") : "No matching action.") + '</p>';
   }
   return '<div class="detail"><h2 class="sr-only">' + safe(card.name) + '</h2>' +
     zoomCard(instance,"closeCardPreview") +
-    ((card.id === "H39" && !game.board.some(s => s.id === "N02")) ||
-     (card.id === "H42" && !game.board.some(s => s.id === "N03")) ?
-      '<p class="meta">The site required for this antibiotic’s tuck ability is absent from this match.</p>' : "") +
     (onBoard?.antibioticTuck ? '<p><b>Antibiotic tuck</b> · ' +
       (onBoard.antibioticTuck.match === "OPTIMAL" ? "Optimal" : "Active") +
       (onBoard.antibioticTuck.remote ? " · from another site" : " · local") + '</p>' : "") +
@@ -372,7 +366,7 @@ function inspectList(ids) {
 }
 
 const compactBoons = {
-  retrieve: "Recover 1 of your cards from discard",
+  retrieve: "May draw from any face-up discard",
   draw: "Draw 1 extra card",
   discount: "First play costs 1 fewer discard",
   extraPlay: "Make 1 extra play at usual cost",
@@ -386,55 +380,55 @@ const compactBoons = {
   tuckDraw: "Draw 1 when you first tuck an opposing card",
 };
 
+function clinicalIcon(id) {
+  return '<img class="clinical-icon" src="/clinical-icons/' + safe(id) +
+    '.webp" alt="" width="144" height="144">';
+}
+
 function renderBoard() {
   if (!game.board.some(site => site.id === focusedSite)) focusedSite = game.board[0]?.id;
-  const siteButtons = game.board.map(({id}) => button(siteName(id), "siteView",
-    'data-id="' + safe(id) + '" aria-pressed="' + (!boardOverview && focusedSite === id) + '"')).join("");
+  const siteButtons = game.board.map(({id}) =>
+    '<button data-action="siteView" data-id="' + safe(id) + '" aria-label="' + safe(siteName(id)) +
+    '" title="' + safe(siteName(id)) + '" aria-pressed="' + (!boardOverview && focusedSite === id) +
+    '">' + clinicalIcon(id) + '</button>').join("");
   const navigation = '<nav class="site-navigation" aria-label="Site views">' + siteButtons +
     button("Overview", "siteView", 'data-id="overview" aria-pressed="' + boardOverview + '"') + '</nav>';
   const available = game.legal[picked];
   const ready = available && payment.size === available.cost && !busy;
+  const capacity = game.siteCapacity ?? 6;
   return navigation +
-    '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' + game.board.filter(site => firstGameStep === null || site.id === focusedSite).map((site) => {
-    const occupied = site.slots.slice(0,6).filter(Boolean), b = occupied.filter((o) => cardOf(o.id).faction === "Bacteria").length;
-    const h = occupied.length-b;
-    const info = data.sites.find((s) => s.id === site.id);
-    const cells = site.slots.map((piece, i) => {
-      if (piece) {
-        const c = cardOf(piece.id);
-        const label = c.name + (piece.tucked.length ? ", " + piece.tucked.length + " tucked" : "") +
-          (game.spentReactions?.[piece.id] ? ", reaction spent" : "");
-        return '<button class="slot occupied" data-action="inspect" data-id="' + safe(piece.id) +
-          '" aria-label="' + safe(label) + '">' + cardArt(piece.id,"board-card-art") + '</button>';
-      }
-      const legal = ready && available.sites.includes(site.id);
-      return '<button class="slot empty ' + (legal ? "legal" : "") + '" data-action="place" data-site="' + site.id +
-        '" data-slot="' + i + '" aria-label="' + safe(info.name + ", space " + (i+1)) + '" ' +
-        (legal ? "" : 'aria-disabled="true" tabindex="-1"') + '>' + (legal ? "Play here" : "—") + '</button>';
-    });
-    const trays = [cells.slice(0, 3), cells.slice(3, 6)].map(row =>
-      '<div class="card-tray"><div class="grid">' + row.join("") + '</div></div>').join("");
-    const tuckSpace = occupied.length === 6 && site.slots.length === 6 &&
-      Object.values(game.legal).some(play => play.sites.includes(site.id));
-    const tuckReady = ready && available.sites.includes(site.id);
-    const extraSpace = tuckSpace ? '<button class="slot empty tuck-space ' + (tuckReady ? "legal" : "") +
-      '" data-action="place" data-site="' + safe(site.id) + '" data-slot="6" ' +
-      (tuckReady ? "" : 'aria-disabled="true" tabindex="-1"') + '>Tuck play</button>' : "";
-    const control = b === h ? (b ? "Contested" : "Unoccupied") :
-      (b > h ? "Bacteria" : "Host") + (Math.max(b,h) === 6 ? " full control" : " majority");
-    const points = game.sitePoints?.[site.id];
-    const boon = game.uniqueSiteBoons ? info.boon : info.legacyBoon ?? info.boon;
-    const fullBoon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
-    const siteFace = '<div class="site-face" style="--site-art:url(/board-art/' + safe(site.id) + '.webp)">' +
-      '<div class="site-live"><h3>' + safe(info.name) + '</h3><span>' + control + ' · ' + occupied.length + '/6</span>' +
-      (points ? '<span>Bacteria ' + points.Bacteria + ' VP · Host ' + points.Host + ' VP</span>' : '') +
-      '</div><p class="site-boon" title="' + safe(fullBoon) + '"><strong>Start-turn majority:</strong> ' +
-      safe(compactBoons[boon] ?? fullBoon) + '</p>' +
-      '<span class="sr-only">' + safe(info.bacteriaSynergy + ' ' + info.hostSynergy) + '</span></div>';
-    const overflow = cells.length > 6 ? '<div class="grid extra-card-slots">' + cells.slice(6).join("") + '</div>' : "";
-    return '<section class="node" data-board-site="' + safe(site.id) + '">' + siteFace +
-      '<div class="site-trays">' + trays + '</div>' + overflow + extraSpace + '</section>';
-  }).join("") + '</div>';
+    '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' +
+    game.board.filter(site => firstGameStep === null || site.id === focusedSite).map(site => {
+      const info = data.sites.find(s => s.id === site.id);
+      const cells = site.slots.slice(0, capacity).map((piece, i) => {
+        if (piece) {
+          const card = cardOf(piece.id);
+          const amount = game.tuckPoints?.[piece.id] ?? 0;
+          const tuck = card.faction === "Host" ? '<span class="tuck-vp">Tuck +' + amount + ' VP</span>' : "";
+          return '<button class="slot occupied" data-action="inspect" data-id="' + safe(piece.id) +
+            '" aria-label="' + safe(card.name + (tuck ? ", tuck " + amount + " VP" : "")) + '">' +
+            cardArt(piece.id,"board-card-art") + tuck + '</button>';
+        }
+        const legal = ready && available.sites.includes(site.id);
+        return '<button class="slot empty ' + (legal ? "legal" : "") + '" data-action="place" data-site="' + safe(site.id) +
+          '" data-slot="' + i + '" aria-label="' + safe(info.name + ", space " + (i + 1)) + '" ' +
+          (legal ? "" : 'aria-disabled="true" tabindex="-1"') + '></button>';
+      });
+      const full = site.slots.slice(0, capacity).every(Boolean);
+      const tuckReady = ready && available.tuckSites?.includes(site.id);
+      const canTuckHere = full && Object.values(game.legal).some(play => play.tuckSites?.includes(site.id));
+      const tuckSpace = canTuckHere ? '<button class="slot empty tuck-space ' + (tuckReady ? 'legal' : '') +
+        '" data-action="place" data-site="' + safe(site.id) + '" data-slot="' + capacity + '" ' +
+        (tuckReady ? "" : 'aria-disabled="true" tabindex="-1"') + '>Tuck play</button>' : "";
+      const boon = game.uniqueSiteBoons ? info.boon : info.legacyBoon ?? info.boon;
+      const fullBoon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
+      return '<section class="node" data-board-site="' + safe(site.id) + '" aria-label="' + safe(info.name) + '">' +
+        '<header class="clinical-site">' + clinicalIcon(site.id) + '<div><p title="' + safe(fullBoon) +
+        '">' + safe(compactBoons[boon] ?? fullBoon) + '</p>' +
+        '<p>+2 VP matching Bacteria · +2 VP per other Immune</p></div></header>' +
+        '<div class="grid portrait-slots" style="--site-columns:' + (capacity / 2) + '">' + cells.join("") +
+        '</div>' + tuckSpace + '</section>';
+    }).join("") + '</div>';
 }
 
 const objectiveValue = (g) => g.vp + (g.per ? " VP per qualifying entry" : " VP if met");

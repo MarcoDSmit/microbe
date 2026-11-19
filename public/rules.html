@@ -47,8 +47,8 @@
     <section class="panel" id="setup">
       <h2>1. Set up the match</h2>
       <ol>
-        <li>Choose Bacteria or Host. Each faction shuffles its own deck. Bacteria has 94 cards and Host has 72. Reserve cards are outside the draw decks.</li>
-        <li>The game draws four distinct sites from a pool of twelve. Each site has six shared spaces.</li>
+        <li>Choose Bacteria or Host. Each faction shuffles its own deck. Bacteria has 103 cards and Host has 72, covering 103 distinct card designs in total.</li>
+        <li>The game draws four distinct sites from a pool of twelve. Each site has four shared spaces.</li>
         <li>Draw six cards. Privately keep two of the three secret objectives offered. Objectives requiring a site can only appear when that site is on the board.</li>
         <li>The game randomly chooses who goes first. In Pass &amp; Play, hand over the device whenever prompted, including for reactions.</li>
       </ol>
@@ -56,10 +56,10 @@
     <section class="panel" id="turn">
       <h2>2. Take your turn</h2>
       <ol>
-        <li><strong>Resolve start-of-turn effects.</strong> You qualify for a site's boon if you start with at least three of your visible cards there and more than your opponent.</li>
+        <li><strong>Resolve start-of-turn effects.</strong> You qualify for a site's boon if you start with at least two of your visible cards there and more than your opponent.</li>
         <li><strong>Spend up to three actions.</strong> Each action lets you play one card, draw one card from your deck, or take the top card of your discard pile. You may repeat an action in any order.</li>
         <li><strong>Play and pay.</strong> Choose Play or drag a card to a legal space. Pay by discarding the stated number of other cards from your hand. Click cards or drag them to the Payment area. A normal play at cost 0 still uses an action. Resolve any targets, abilities, and reactions before continuing.</li>
-        <li><strong>Resolve bonus plays.</strong> A bonus play spends no normal action. Pay the card's cost, applying any discount and restrictions stated by the ability.</li>
+        <li><strong>Resolve bonus plays.</strong> A bonus play spends no normal action. Pay the card's cost, at its usual discard cost.</li>
         <li><strong>End turn.</strong> You may end early. If you have more than 12 cards, choose which to discard. If the match continues, your opponent takes the next turn unless Go Again grants you an extra turn.</li>
       </ol>
       <p><strong>Go Again</strong> grants one extra turn, even if it triggers more than once. It cannot trigger during that extra turn.</p>
@@ -67,19 +67,19 @@
     <section class="panel" id="tucks">
       <h2>3. Resolve tucks and reactions</h2>
       <ul>
-        <li><strong>Tuck.</strong> Put the target beneath the card that tucked it. This opens the target's space. A local tuck targets the same site. A local sweep tucks all eligible targets there. Immune tucks and Ambush follow their printed target restrictions.</li>
+        <li><strong>Tuck.</strong> Put the target beneath the card that tucked it. This opens the target's space. A local tuck targets the same site. A local sweep tucks all eligible targets there. Bacteria and antibiotics can take any size stack. Immune cards can tuck a target with up to one card beneath it. The whole stack moves with the target.</li>
         <li><strong>Antibiotic match strip.</strong> Find the antibiotic's symbol on the bacterium. <strong>Active (A)</strong> qualifies for a local tuck. <strong>Optimal (O)</strong> qualifies for a local tuck or lets an on-play attack choose one distant Optimal target in place of its local effect. Recurring attacks stay local. Apply any limits printed on the antibiotic.</li>
-        <li><strong>Full-site tuck play.</strong> A card with an on-play tuck can use the temporary seventh space if there is an eligible local target. Choose a local attack. The new card takes a space opened by the tuck or by Refuge.</li>
-        <li><strong>Refuge.</strong> When a card with Refuge would be tucked, its owner may move it to an open space at another site and cancel the tuck. The move uses no action and triggers no on-play abilities. Each copy can use Refuge once between the starts of its owner's turns.</li>
-        <li><strong>Resistance (R).</strong> A matching R symbol blocks the tuck. In new matches, a visible bacterium with an unused reaction draws one after a matching antibiotic is played at its site and the attack resolves. B23 can tuck the antibiotic instead if it tucked nothing. B23 can also use its reaction to draw after another Host antibiotic play if B23 is still visible. Each copy gets one antibiotic reaction per game.</li>
-        <li><strong>Suppress.</strong> While visible, H34 blocks bonus plays granted by bacteria played at its site. While visible, H36 blocks Bacteria from using Go Again anywhere.</li>
+        <li><strong>Full-site tuck play.</strong> A card with an on-play tuck can use the temporary fifth position if there is an eligible local target. Choose a local attack. The new card takes a space opened by the tuck or by Evade.</li>
+        <li><strong>Evade.</strong> When a card with Evade would be tucked, its owner may move it to an open space at another site and cancel the tuck. The move uses no action and triggers no on-play abilities. Each copy can use Evade once between the starts of its owner's turns.</li>
+        <li><strong>Resistance (R).</strong> A matching R cancels the antibiotic’s effects, tucks it beneath a matching bacterium, and gives Bacteria one deck draw. Host still spends the play and pays the discard cost. Resistance can trigger repeatedly.</li>
+        <li><strong>Block Go Again.</strong> While H36 or B74 is visible, the opposing faction cannot take an extra turn.</li>
       </ul>
     </section>
     <section class="panel" id="sites">
       <h2>4. Use site boons</h2>
-      <p>A 3–3 tie gives neither player a boon. Control is checked at the start of your turn. The board shows the boon and scoring synergies for each active site.</p>
+      <p>A 2–2 tie gives neither player a boon. Control is checked at the start of your turn. The board shows the boon and scoring synergies for each active site.</p>
       <dl>
-        <dt>Peripheral IV Site</dt><dd>Recover any one card from your discard pile.</dd>
+        <dt>Peripheral IV Site</dt><dd>For each deck draw this turn, you may take any face-up card from your discard pile instead.</dd>
         <dt>Lung</dt><dd>Draw one card.</dd>
         <dt>Urinary Tract</dt><dd>Your first normal play costs one fewer discard.</dd>
         <dt>Prosthetic Joint</dt><dd>Make one extra play at its usual cost.</dd>
@@ -95,14 +95,14 @@
     </section>
     <section class="panel" id="scoring">
       <h2>5. Score the match</h2>
-      <p>Check for the end of the match after a turn finishes. The game scores if either draw deck is empty, all 24 board spaces are filled, or one faction fills all six spaces at two sites.</p>
+      <p>Check for the end of the match after a turn finishes. The game scores if either draw deck is empty, all 16 board spaces are filled, or one faction fills all four spaces at two sites.</p>
       <ul>
-        <li><strong>Cards.</strong> Add base VP and applicable card and site synergies from visible cards. Add each visible card's printed tuck value for each card directly beneath it.</li>
-        <li><strong>Territory.</strong> At each site, having more visible cards than your opponent earns 3 VP. Occupying all six spaces earns 5 VP total for that site. A tie earns neither faction territory points.</li>
+        <li><strong>Cards.</strong> Add visible base VP. Bacteria gain +2 VP at a matching site. Each visible Immune card gains +2 VP per other visible Immune card at that site. Visible antibiotics earn +2 VP per stacked card and +2 VP per O tuck they made and still hold. Holding an O tuck protects that antibiotic from tucks. An antibiotic tucked by Bacteria earns Host +1 VP per card beneath it.</li>
+        <li><strong>Territory.</strong> At each site, having at least two visible cards and more than your opponent earns 1 VP. Occupying all four spaces earns 3 VP total for that site. A tie earns neither faction territory points.</li>
         <li><strong>Secret objectives.</strong> Score each objective using its printed condition or formula. The in-game indicator updates as the board changes. Final points use the board when the match ends. Match-rail objectives may also require a recorded R reaction, an O or A tuck, or a distant O tuck. The relevant bacterium or its captor must still be visible, as specified.</li>
       </ul>
       <p><strong>The higher VP total wins.</strong> Equal totals are a tie.</p>
-      <p>During play, the row above your hand shows both factions’ public points. Each site has its own tally. The match replay includes the background log and records what a card contributed when its play resolved.</p>
+      <p>During play, the row above your hand shows both factions’ public points. Played Host cards show their current tuck VP. The match replay includes the background log and records what a card contributed when its play resolved.</p>
       <p>Choose <strong>Play again</strong> to start a fresh match with the same seats. The series tally counts Bacteria wins, Host wins and ties. The replay records the start of the first turn and the time of final scoring.</p>
     </section>
     <section class="panel" id="objectives">
@@ -115,15 +115,15 @@
         <dt>G02 · Negative Nelly</dt>
         <dd><strong>10 VP.</strong> At least one visible Gram-negative bacterium you control at each of the four active sites.</dd>
         <dt>G03 · Urinary Uprising</dt>
-        <dd><strong>8 VP.</strong> At least three of your visible Uropathogen cards occupy Urinary Tract.</dd>
+        <dd><strong>8 VP.</strong> Control at least three visible bacteria with Urinary Tract synergy at Urinary Tract.</dd>
         <dt>G04 · Respiratory Roundup</dt>
-        <dd><strong>9 VP.</strong> At least three visible Respiratory-tagged bacteria you control occupy Lung.</dd>
+        <dd><strong>9 VP.</strong> Control at least three visible bacteria with Lung synergy at Lung.</dd>
         <dt>G05 · Device Dwellers</dt>
         <dd><strong>10 VP.</strong> You have majority at both IV Site and Prosthetic Joint when scoring.</dd>
         <dt>G06 · Culture Collection</dt>
         <dd><strong>8 VP.</strong> At least six distinct visible bacterial species are under your control.</dd>
         <dt>G07 · Hospital Handoff</dt>
-        <dd><strong>9 VP.</strong> At least one Hospital-tagged bacterium you control occupies three different sites.</dd>
+        <dd><strong>9 VP.</strong> Control at least three visible bacteria that each have an R match against an antibiotic.</dd>
         <dt>G08 · Microbial Monoculture</dt>
         <dd><strong>10 VP.</strong> At least three of your visible bacteria are the same species.</dd>
         <dt>G09 · The Blue Wall</dt>
@@ -131,9 +131,9 @@
         <dt>G19 · Resistance Holds</dt>
         <dd><strong>7 VP.</strong> At least one of your visible bacteria triggered a printed R reaction this game.</dd>
         <dt>G20 · CNS Breach</dt>
-        <dd><strong>7 VP.</strong> Two distinct bacterial species you control are visible at Central Nervous System, each with printed or site-tag synergy there.</dd>
-        <dt>G21 · STI Cluster</dt>
-        <dd><strong>6 VP.</strong> At one site, you control a visible STI-tagged bacterium and a visible bacterium of a different species.</dd>
+        <dd><strong>7 VP.</strong> Control two distinct visible bacterial species with CNS synergy anywhere on the board.</dd>
+        <dt>G21 · Genital Tract Cluster</dt>
+        <dd><strong>6 VP.</strong> Control two distinct visible bacterial species at Genital Tract, with at least one scoring synergy there.</dd>
       </dl>
       <h3>Host</h3>
       <dl>
@@ -179,11 +179,11 @@
         <dt>Cost / free play</dt>
         <dd>Cost is how many other cards you discard from your hand to play a card. A card that costs 0 still spends an action when played normally.</dd>
         <dt>Bonus play</dt>
-        <dd>Play one extra card without spending a normal action. Pay its usual cost unless the effect gives a discount. “Cost −1” means one fewer discard. Follow any card or site restriction in the prompt.</dd>
+        <dd>Play one extra card without spending a normal action. Pay its usual discard cost.</dd>
         <dt>Draw / recover / take top discard</dt>
         <dd>Draw from the top of your deck. Recover means choose a card from your discard pile, unless the effect specifies a position. Take top discard returns only the top card.</dd>
         <dt>Filter / draft</dt>
-        <dd>Filter means look at the stated number of cards from your deck, keep the allowed number, and discard the rest. Draft means choose from the secret objectives offered by the effect.</dd>
+        <dd>Filter means look at the stated number of cards from your deck, keep the allowed number, and discard the rest. Draft means draw two eligible secret objectives, keep one, and discard the other.</dd>
         <dt>Hand limit</dt>
         <dd>Start with six cards. At the end of your turn, discard down to 12 if needed.</dd>
       </dl>
@@ -196,15 +196,15 @@
         <dt>Here / allied / opponent card</dt>
         <dd>Here means this card’s site. An allied card is yours. An opponent card belongs to the other faction. In a scoring condition, “tucked here” means beneath the card that prints the condition.</dd>
         <dt>Matching / eligible</dt>
-        <dd>A matching antibiotic target has an Active or Optimal symbol and meets the card’s targeting restrictions, such as Lung only. In a direct tuck, eligibility comes from the printed conditions. For example, B16 Ambush can tuck up to one opponent card here with no cards beneath it.</dd>
+        <dd>A matching antibiotic target has an Active or Optimal symbol and meets the card’s targeting restrictions, such as Lung only. B16 Ambush can tuck one eligible opponent at its site. An antibiotic holding an O tuck is protected.</dd>
         <dt>Local tuck / local sweep</dt>
         <dd>Target cards at the same site. “ALL” tucks every eligible local target when you choose a local sweep. If an ability says “up to,” you can choose fewer targets or decline.</dd>
         <dt>Full-site tuck play</dt>
-        <dd>An on-play tuck card with an eligible local target can use a temporary seventh space at a full site. You must choose a local attack. The played card moves into the space opened by the tuck or by Refuge.</dd>
+        <dd>An on-play tuck card with an eligible local target can use a temporary fifth position at a full site. You must choose a local attack. The played card moves into the space opened by the tuck or by Evade.</dd>
         <dt>Optimal / Active / distant tuck</dt>
         <dd>Both Optimal and Active matches can qualify for a local antibiotic tuck. An antibiotic with an on-play attack can choose one distant Optimal target instead of its local attack. Recurring attacks stay local, and card-specific limits apply.</dd>
         <dt>Resistance match</dt>
-        <dd>A matching R symbol blocks the tuck. In new matches, when Host plays a matching antibiotic at this site, draw 1 after the attack if the bacterium is still visible and its reaction is unused. Each copy can react once per game. B23 can tuck the local antibiotic instead if it tucked nothing, or spend its reaction to draw after another Host antibiotic play while B23 is visible. On C. diff, R represents an opening created by antibiotic disruption.</dd>
+        <dd>A matching R cancels the antibiotic’s effects, tucks it beneath a matching bacterium, and gives Bacteria one deck draw. Host still spends the play and pays the discard cost. Resistance can trigger repeatedly.</dd>
       </dl>
     </section>
     <section class="panel" id="glossary-abilities">
@@ -214,31 +214,31 @@
         <dd>On-play effects resolve when a card is played. Start-of-turn effects resolve at the start of your turn. A while-visible effect lasts while its card occupies a board space.</dd>
         <dt>Reaction</dt>
         <dd>An effect that responds to a trigger without using an action. In Pass &amp; Play, hand the device over when the game asks the other player to react.</dd>
-        <dt>Refuge</dt>
-        <dd>When a card with Refuge would be tucked, you may move that card to an open space at another site and cancel the tuck. Moving triggers no on-play abilities. Each copy can use Refuge once between the starts of your turns.</dd>
+        <dt>Evade</dt>
+        <dd>When a card with Evade would be tucked, you may move that card to an open space at another site and cancel the tuck. Moving triggers no on-play abilities. Each copy can use Evade once between the starts of your turns.</dd>
         <dt>Ambush</dt>
-        <dd>When played, you may tuck one Host card at this site that has nothing tucked beneath it.</dd>
+        <dd>When played, you may tuck one eligible Host card at this site.</dd>
         <dt>Go Again</dt>
         <dd>Take one extra turn after this one. Multiple triggers grant one extra turn total. Go Again cannot trigger during that extra turn.</dd>
-        <dt>Suppress</dt>
-        <dd>While visible, H34 blocks bonus plays granted by Bacteria played at its site. H36 blocks Bacteria from using Go Again anywhere.</dd>
+        <dt>Block Go Again</dt>
+        <dd>While H36 or B74 is visible, the opposing faction cannot take an extra turn.</dd>
       </dl>
     </section>
     <section class="panel" id="glossary-sites">
       <h3>Sites and scoring</h3>
       <dl>
         <dt>Site / majority / full control</dt>
-        <dd>Four sites are drawn for each match, with six shared spaces each. Majority means you have more visible cards there than your opponent. Full control means all six spaces are yours.</dd>
+        <dd>Four sites are drawn for each match, with four shared spaces each. Majority means you have at least two visible cards there and more than your opponent. Full control means all four spaces are yours.</dd>
         <dt>Boon</dt>
-        <dd>Each site has its own perk, printed on the board. It unlocks when you start your turn with at least three of your cards there and more than your opponent. A 3–3 tie grants neither side a boon.</dd>
+        <dd>Each site has its own perk, printed on the board. It unlocks when you start your turn with at least two of your visible cards there and more than your opponent. A 2–2 tie grants neither side a boon.</dd>
         <dt>VP / base / synergy / tuck points</dt>
-        <dd>VP means victory points. Visible cards contribute their printed base points, applicable card and site synergies, and their printed tuck value for each card directly beneath them.</dd>
+        <dd>VP means victory points. Apply the base, synergy and tuck rules in the scoring section above.</dd>
         <dt>Reading compact synergy</dt>
-        <dd>“Liver +2 VP” scores two points if the card is visible at Liver. A slash joins alternative sites for one award. Separate clauses can both score. “Per pair” counts complete pairs, and “max” caps that clause. Site cards show their own tag bonuses.</dd>
+        <dd>“Liver +2 VP” scores two points if the card is visible at Liver. A bacterium scores the site bonus once. The site icons show which sites qualify.</dd>
         <dt>Territory / secret objectives</dt>
-        <dd>At scoring, a majority earns 3 VP and full control earns 5 VP for that site. Secret objectives are private scoring goals. Keep two of your opening three. Some objectives ask you to keep cards visible after a specific match-rail reaction or tuck. An antibiotic’s original match and whether it tucked from another site determine the score, even if the antibiotic later moves.</dd>
+        <dd>At scoring, a majority earns 1 VP and full control earns 3 VP for that site. Secret objectives are private scoring goals. Keep two of your opening three. Some objectives ask you to keep cards visible after a specific match-rail reaction or tuck. An antibiotic’s original match and whether it tucked from another site determine the score, even if the antibiotic later moves.</dd>
         <dt>End of the match</dt>
-        <dd>Score at the end of a turn if either draw deck is empty, all 24 spaces are filled, or one faction fills all six spaces at two sites. The higher VP total wins.</dd>
+        <dd>Score at the end of a turn if either draw deck is empty, all 16 spaces are filled, or one faction fills all four spaces at two sites. The higher VP total wins.</dd>
       </dl>
     </section>
     </section>

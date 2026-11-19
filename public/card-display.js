@@ -1,7 +1,7 @@
 export const cardArtUrl = id => "/card-art/" + id.split(":")[0] + ".webp";
 
 export function tuckScoreLabel(card) {
-  const canTuck = ["Ambush", "Inducible Response"].includes(card.abilityName);
+  const canTuck = !!card.effects?.attack || ["Ambush", "Inducible Response"].includes(card.abilityName);
   return card.tuck > 0 || canTuck ? " · " + card.tuck + " VP per tuck" : "";
 }
 

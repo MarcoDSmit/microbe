@@ -9,6 +9,8 @@
   <style>
     main { max-width: 44rem; margin: auto; padding: clamp(.75rem, 4vw, 2rem); }
     .tutorial { display: grid; gap: .8rem; }
+    .tutorial-cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(6rem,1fr)); gap:.4rem; }
+    .tutorial-cards img { width:100%; max-width:10rem; }
     .tutorial nav { display: flex; gap: 1rem; flex-wrap: wrap; }
     .tutorial-header { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; }
     .tutorial-header a { text-decoration:none; }
@@ -21,13 +23,26 @@
         <h1 id="tutorial-title">How to play</h1>
         <a href="/" class="secondary tutorial-exit">Exit tutorial</a>
       </header>
-      <p>Welcome to Microbe Wars. Play as Bacteria spreading across four infection sites, or as Host trying to contain them. Start by keeping two of your three secret objectives.</p>
+      <p>Welcome to Microbe Wars. Play as Bacteria spreading across four infection sites, each with four shared spaces, or as Host trying to contain them. Start by keeping two of your three secret objectives.</p>
       <p>You get three actions each turn. Play a card, draw from your deck, or take the top card from your discard pile. To pay a card's cost, discard that many other cards from your hand.</p>
-      <p>To tuck a card, slide it beneath the card that tucked it. That frees up its space and takes it out of active play.</p>
-      <p>Match the antibiotic's symbol to the bacterium's rail. <strong>Active</strong> can tuck it at the same site. <strong>Optimal</strong> can tuck it locally or reach one distant target instead, when the antibiotic allows it. <strong>Resistance</strong> blocks the tuck and may trigger a reaction.</p>
-      <p>Check each card's synergy for bonus points. When the match ends, add up your card points, tuck points, territory, and secret objectives. The higher score wins.</p>
+      <p>Tap a card to inspect it. Use Expand hand to see more of your cards. The site icons on a Bacteria card show where it earns +2 VP. Each visible Immune card gains +2 VP per other visible Immune card at its site.</p>
+      <p>A tuck moves the target and its stack beneath the attacker. Bacteria and antibiotics can take any size stack. Immune cards can tuck a target with up to one card beneath it.</p>
+      <p><strong>A</strong> matches tuck locally. <strong>O</strong> matches can also reach an eligible distant target and protect the antibiotic while held. <strong>R</strong> cancels a matching antibiotic played at that site, tucks it beneath the resistant bacterium, and gives Bacteria one draw. Host still pays for the play. Played Host cards show their current tuck VP. A visible antibiotic gains +2 VP per tucked card and another +2 VP for each O tuck it made.</p>
+      <p>Two or more visible cards and a lead give majority. Majority grants the start-of-turn boon and +1 VP at scoring. Filling all four spaces with your faction earns +3 VP instead.</p>
+      <p>The four new Brucella cards offer two eligible objectives and let you keep one. Bartonella and Leptospira draw a card, Borrelia grants a bonus play, and Burkholderia blocks the opponent’s extra turn while visible.</p>
+      <div class="tutorial-cards" aria-label="New card examples">
+        <img src="/card-art/B69.webp" alt="Brucella melitensis card">
+        <img src="/card-art/B70.webp" alt="Brucella abortus card">
+        <img src="/card-art/B71.webp" alt="Brucella suis card">
+        <img src="/card-art/B72.webp" alt="Brucella canis card">
+        <img src="/card-art/B73.webp" alt="Bartonella card">
+        <img src="/card-art/B74.webp" alt="Burkholderia card">
+        <img src="/card-art/B75.webp" alt="Leptospira card">
+        <img src="/card-art/B76.webp" alt="Borrelia card">
+      </div>
       <nav aria-label="Game links">
         <a href="/#first-game">My first game</a>
+        <a href="library.html">Card library</a>
         <a href="rules.html">Rules and glossary</a>
       </nav>
     </article>

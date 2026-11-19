@@ -46,7 +46,7 @@ export function chooseBotMove(game, data) {
       if (score <= bestScore) continue;
       const slot = site.slots.indexOf(null);
       bestScore = score;
-      best = {type:"play", card:id, site:site.id, slot:slot < 0 ? 6 : slot,
+      best = {type:"play", card:id, site:site.id, slot:slot < 0 ? (site.slots.length) : slot,
         pay:game.hand.filter(other => other !== id).sort((a,b) => value(a)-value(b)).slice(0,legal.cost)};
     }
   }

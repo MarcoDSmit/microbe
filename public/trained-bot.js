@@ -27,7 +27,7 @@ export function candidates(game, data) {
       if (!legal.sites.includes(site.id)) continue;
       const slot = site.slots.indexOf(null);
       const tag = game.faction === "Host" ? rules.hostTag : rules.bacteriaTag;
-      add({type:"play", card:id, site:site.id, slot:slot < 0 ? 6 : slot,
+      add({type:"play", card:id, site:site.id, slot:slot < 0 ? (site.slots.length) : slot,
         pay:payOrder.filter(other => other !== id).slice(0,legal.cost)}, [
         [0,c.base], [1,-c.cost], [2,+!!c.ability], [3,-legal.cost],
         [4,+!!legal.tuckSites?.includes(site.id)], [5,+(!!legal.tuckSites && !legal.tuckSites.includes(site.id))],

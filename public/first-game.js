@@ -3,7 +3,7 @@ export const firstGameSteps = [
   { type:"play", card:"B02", site:"N09", pay:[],
     hint:"This is your hand. The four sites change each game. Drag Staphylococcus epidermidis from your hand to an open space at Skin & Soft Tissue. Tap a card to enlarge it, then tap it again to return it to your hand. It costs 0 cards and uses one action." },
   { type:"play", card:"B32", site:"N06", pay:["B40","B25"],
-    hint:"Staphylococcus epidermidis grants a bonus Staphylococcus play. Drag MRSA to Heart for its synergy. Then tap Serratia and Klebsiella, in that order, to pay." },
+    hint:"Staphylococcus epidermidis grants a bonus play at the usual discard cost. Drag MRSA to Heart for its synergy. Then tap Serratia and Klebsiella, in that order, to pay." },
   { type:"drawCard",
     hint:"Check the O, A and R strips on the cards. Different bacteria match different antibiotics. Now spend an action to draw from your deck." },
   { type:"takeDiscard",
@@ -23,7 +23,7 @@ export function createFirstGame(newGame, data) {
     return randomState / 4294967296;
   });
   const siteIds = ["N09","N06","N02","N01"];
-  match.board = siteIds.map(id => ({id, slots:Array(6).fill(null)}));
+  match.board = siteIds.map(id => ({id, slots:Array(match.siteCapacity).fill(null)}));
   match.status = "objectives";
   match.first = match.turn = "Bacteria";
   for (const [faction, hand, firstDraw, offer] of [

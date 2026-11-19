@@ -580,3 +580,33 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   .match-screen .layout > .aside:has(.match-objectives) {max-height:calc(100% - 6.75rem)}
   .match-screen .turn-controls .art-button-label {font-size:.85rem}
 }
+
+.lunar-lobby {
+  grid-template-columns:minmax(0,1fr);
+  place-items:center;
+  align-content:center;
+  min-height:100dvh;
+  padding:clamp(.65rem,2vw,2rem);
+  background-position:center;
+  background-size:cover;
+}
+.lunar-console {width:min(100%,28rem);justify-self:center}
+body:has(.lunar-lobby) .masthead {justify-content:center}
+.clinical-icon {display:block;width:2rem;height:2rem;object-fit:contain}
+.site-navigation button .clinical-icon {width:1.55rem;height:1.55rem}
+.clinical-site {display:flex;align-items:center;justify-content:center;gap:.55rem;padding:.35rem .25rem}
+.clinical-site > .clinical-icon {width:2.75rem;height:2.75rem}
+.clinical-site p {margin:0;color:#edf7ff;font-size:clamp(.73rem,2.8vw,.9rem)}
+.clinical-site p + p {color:#bcd2de;font-size:.72rem}
+.board .portrait-slots {grid-template-columns:repeat(var(--site-columns),minmax(0,1fr));gap:.35rem;width:min(100%,27rem);margin-inline:auto}
+.board .portrait-slots .slot {position:relative;aspect-ratio:5 / 7;min-height:0;padding:0;overflow:hidden;background:#08141d}
+.board .portrait-slots .slot.legal {outline:1px solid #6ce8d3;outline-offset:-2px}
+.board .portrait-slots .board-card-art {width:100%;height:100%;max-height:none;object-fit:contain}
+.tuck-vp {position:absolute;bottom:7%;inset-inline:8%;background:#08141def;border:1px solid #587889;border-radius:.25rem;padding:.14em;color:#fff;font-size:clamp(.58rem,2.7vw,.86rem);line-height:1.16;text-align:center}
+.board-overview .portrait-slots {grid-template-columns:repeat(4,minmax(0,1fr));gap:.17rem}
+@media (orientation:portrait) {
+  .match-screen .board-overview {grid-template-columns:minmax(0,1fr)}
+  .match-screen .board-focus {container-type:size}
+  .match-screen.compact-match:not(.hand-expanded) .board-focus {height:clamp(14rem,62dvh,40rem)}
+  .match-screen .board-focus .portrait-slots {width:min(100%,max(5rem,calc((100cqh - 4.6rem) * .71)),25rem)}
+}

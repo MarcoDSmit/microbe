@@ -38,26 +38,21 @@ assert.equal((await hit(room + "/replay")).status, 403);
 assert.equal(lobby.deckCount, deckSize("Host") - 6);
 const expanded = newGame(random);
 const bacteriaCards = [...expanded.players.Bacteria.deck,...expanded.players.Bacteria.hand];
-assert.equal(bacteriaCards.length,94);
+assert.equal(bacteriaCards.length,deckSize("Bacteria"));
 assert.ok(bacteriaCards.includes("B68") && !bacteriaCards.includes("B68:2"));
 assert.ok(bacteriaCards.includes("B46") && !bacteriaCards.includes("B46:2"));
-assert.ok(!bacteriaCards.includes("B67"));
+assert.ok(bacteriaCards.includes("B67"));
 
-const additionalSynergy = {
-  "Liver": ["B04", "B25"],
-  "Middle Ear": ["B31", "B36"],
-  "Eye": ["B31", "B34", "B51"],
-  "Skin & Soft Tissue": ["B28", "B34"],
-};
-for (const [siteName, cardIds] of Object.entries(additionalSynergy)) {
-  const site = data.sites.find(({name}) => name === siteName);
-  for (const id of cardIds) {
-    const game = newGame(random);
-    game.board = [{id:site.id, slots:[piece(id), null, null, null, null, null]}];
-    const points = view(game, "Bacteria").sitePoints[site.id].Bacteria;
-    assert.equal(points - data.cards[id].base - 3, 2, id + " synergy at " + siteName);
+for (const card of Object.values(data.cards)) {
+  for (const bonus of card.siteSynergies) {
+    const site = data.sites.find(site => site.id === bonus.site);
+    const match = newGame(random);
+    match.board = [{id:site.id, slots:[piece(card.id),null,null,null,null,null]}];
+    assert.equal(view(match,card.faction).sitePoints[site.id][card.faction],
+      card.base+(card.faction==="Bacteria" ? bonus.vp : 0),card.id+" synergy at "+site.name);
   }
 }
+
 for (const card of Object.values(data.cards).filter(card => card.copies != null)) {
   for (const drug of Object.values(data.cards).filter(card => card.rail)) {
     const match = card.optimal.includes(drug.mark) ? "OPTIMAL" : card.active.includes(drug.mark) ? "ACTIVE" : card.resist.includes(drug.mark) ? "TRIGGER" : "NONE";
@@ -65,7 +60,7 @@ for (const card of Object.values(data.cards).filter(card => card.copies != null)
   }
 }
 assert.equal(lobby.board.length, 4);
-assert.ok(lobby.board.every((node) => node.slots.length === 6));
+assert.ok(lobby.board.every((node) => node.slots.length === 4));
 assert.equal((await hit(room)).status, 403);
 assert.equal((await hit(room + "/join", "POST", {invite: "0".repeat(48)})).status, 403);
 const joins = await Promise.all([
@@ -127,13 +122,100 @@ assert.equal(restarted.startedAt,null);
 function fixture(siteId, turn, board, hand) {
   const s = newGame(random);
   s.board = data.sites.slice(0,4).map(({id})=>({id,slots:Array(6).fill(null)}));
-  s.status = "playing"; s.turn = turn; s.turnNumber = 5; s.slots = 1;
+  s.status = "playing"; s.siteCapacity = 6; s.turn = turn; s.turnNumber = 5; s.slots = 1;
   const node = s.board.find((n) => n.id === siteId);
   node.slots = [...board.map(piece), ...Array(6-board.length).fill(null)];
   s.players[turn].hand = hand;
   return s;
 }
 
+{ // Regression coverage for the approved 103-card catalog.
+assert.equal(Object.keys(data.cards).length,103);
+for (const id of ["B73","B74","B75","B76"]) {
+  assert.equal(data.cards[id].cost,2);
+  assert.equal(data.cards[id].base,3);
+}
+const anywhereDraw = fixture("N01","Bacteria",[],["B21","B04"]);
+const drawDeck = anywhereDraw.players.Bacteria.deck.length;
+act(anywhereDraw,"Bacteria",{type:"play",card:"B21",site:"N01",slot:0,pay:["B04"]});
+assert.equal(anywhereDraw.players.Bacteria.deck.length,drawDeck-2);
+
+const complement = fixture("N01","Host",["B16","B18"],["H09","H04","H07"]);
+act(complement,"Host",{type:"play",card:"H09",site:"N01",slot:2,pay:["H04","H07"]});
+assert.equal(complement.pending.max,2);
+assert.ok(complement.pending.choices.every(id => data.cards[id].gram === "Positive"));
+act(complement,"Host",{type:"choose",selected:["B16","B18"]});
+assert.equal(complement.board[0].slots[2].tucked.length,2);
+
+const persistent = fixture("N01","Host",["B16","B17","B32"],["H21","H04","H07","H10"]);
+act(persistent,"Host",{type:"play",card:"H21",site:"N01",slot:3,pay:["H04","H07","H10"]});
+assert.equal(persistent.pending.min,0);
+assert.equal(persistent.pending.max,3);
+act(persistent,"Host",{type:"choose",selected:["B16","B17","B32"]});
+assert.equal(persistent.board[0].slots[3].tucked.length,3);
+persistent.board[0].slots[0] = piece("B16:2");
+act(persistent,"Host",{type:"end"});
+act(persistent,"Bacteria",{type:"end"});
+assert.equal(persistent.pending,null);
+assert.equal(persistent.board[0].slots[0].id,"B16:2");
+
+// A multi-target antibiotic chooses its local group or a single distant Optimal target.
+const multiLocal = fixture("N01","Host",["B16","B17"],["H21","H04","H07","H10"]);
+multiLocal.board[1].slots[0] = piece("B32");
+act(multiLocal,"Host",{type:"play",card:"H21",site:"N01",slot:2,pay:["H04","H07","H10"]});
+act(multiLocal,"Host",{type:"choose",selected:["local"]});
+assert.equal(multiLocal.pending.max,2);
+act(multiLocal,"Host",{type:"choose",selected:["B16","B17"]});
+assert.equal(multiLocal.board[0].slots[2].tucked.length,2);
+assert.equal(multiLocal.board[1].slots[0].id,"B32");
+
+for (const id of ["H39","H42"]) {
+  const target = Object.values(data.cards).find(card => card.faction==="Bacteria" &&
+    !card.effects.evade && ["OPTIMAL","ACTIVE"].includes(data.matrix[id][card.id]));
+  const match = fixture("N01","Host",[target.id],[id,"H01","H04","H07"]);
+  const cost = data.cards[id].cost;
+  act(match,"Host",{type:"play",card:id,site:"N01",slot:1,pay:match.players.Host.hand.slice(1,cost+1)});
+  if (match.pending) act(match,"Host",{type:"choose",selected:[target.id]});
+  assert.equal(match.board[0].slots[1].tucked[0].id,target.id);
+}
+for (const id of ["B69","B70","B71","B72"]) {
+  const match = fixture("N01","Bacteria",[],[id,"B04"]);
+  const deck = [...match.players.Bacteria.goalDeck];
+  act(match,"Bacteria",{type:"play",card:id,site:"N01",slot:0,pay:["B04"]});
+  assert.deepEqual(match.pending.choices,deck.slice(0,2));
+  act(match,"Bacteria",{type:"choose",selected:[deck[0]]});
+  assert.ok(match.players.Bacteria.goals.includes(deck[0]));
+  assert.ok(match.players.Bacteria.goalDiscard.includes(deck[1]));
+}
+for (const id of ["B73","B75"]) {
+  const match = fixture("N01","Bacteria",[],[id,"B04","B07"]);
+  const count = match.players.Bacteria.deck.length;
+  act(match,"Bacteria",{type:"play",card:id,site:"N01",slot:0,pay:["B04","B07"]});
+  assert.equal(match.players.Bacteria.deck.length,count-1);
+}
+const newBonus = fixture("N01","Bacteria",[],["B76","B04","B07","B10"]);
+act(newBonus,"Bacteria",{type:"play",card:"B76",site:"N01",slot:0,pay:["B04","B07"]});
+assert.equal(newBonus.pending.kind,"bonus");
+act(newBonus,"Bacteria",{type:"play",card:"B10",site:"N02",slot:0,pay:[]});
+assert.equal(newBonus.slots,0);
+
+// Burkholderia blocks only the opposing faction, and only while visible.
+const originalGoAgain = data.cards.H27.effects.goAgain;
+data.cards.H27.effects.goAgain = true;
+for (const visible of [false,true]) {
+  const match = fixture("N01","Host",[visible ? "B74" : "B04"],["H27","H01","H04","H07"]);
+  if (!visible) match.board[0].slots[0].tucked.push(piece("B74"));
+  const cost=data.cards.H27.cost;
+  act(match,"Host",{type:"play",card:"H27",site:"N01",slot:1,pay:match.players.Host.hand.slice(1,cost+1)});
+  if(match.pending?.kind==="bonus")act(match,"Host",{type:"skipBonus"});
+  act(match,"Host",{type:"end"});
+  assert.equal(match.extra,!visible);
+}
+if(originalGoAgain===undefined)delete data.cards.H27.effects.goAgain;
+else data.cards.H27.effects.goAgain=originalGoAgain;
+console.log("Verified approved CSV effects, new organisms, local multi-tuck choices, objective drafting and both Go Again blockers.");
+
+}
 const seenSites = new Set(), seenBoards = new Set();
 let rngState = 80310;
 const siteRandom = () => ((rngState = (Math.imul(rngState,1664525)+1013904223) >>> 0) / 4294967296);
@@ -141,7 +223,7 @@ for (let i=0; i<100; i++) {
   const match = newGame(siteRandom);
   const ids = new Set(match.board.map(site=>site.id));
   assert.equal(ids.size,4);
-  assert.ok(match.board.every(site=>site.slots.length===6));
+  assert.ok(match.board.every(site=>site.slots.length===4));
   for (const id of ids) seenSites.add(id);
   seenBoards.add([...ids].sort().join(","));
   for (const player of Object.values(match.players)) {
@@ -163,7 +245,7 @@ function boonFixture(id, faction="Bacteria") {
 }
 
 for (const [own, opponent, getsBoon] of [
-  [0,0,false], [1,0,false], [2,0,false], [2,1,false], [2,3,false],
+  [0,0,false], [1,0,false], [2,0,true], [2,1,true], [2,3,false],
   [3,0,true], [3,1,true], [3,2,true], [3,3,false],
   [4,2,true], [5,1,true], [6,0,true],
 ]) {
@@ -173,6 +255,43 @@ for (const [own, opponent, getsBoon] of [
   const deckCount = match.players.Bacteria.deck.length;
   act(match,"Host",{type:"end"});
   assert.equal(match.players.Bacteria.deck.length,deckCount-Number(getsBoon),own+"–"+opponent);
+}
+{
+  const fullResistance = fixture("N01","Host",["B32","B04","B07","B10"],["H16","H04"]);
+  fullResistance.siteCapacity=4;
+  fullResistance.board=fullResistance.board.map(site=>({...site,slots:site.slots.slice(0,4)}));
+  const deck=fullResistance.players.Bacteria.deck.length;
+  assert.ok(view(fullResistance,"Host").legal.H16.sites.includes("N01"));
+  act(fullResistance,"Host",{type:"play",card:"H16",site:"N01",slot:4,pay:["H04"]});
+  assert.equal(fullResistance.board[0].slots.length,4);
+  assert.equal(fullResistance.board[0].slots[0].tucked[0].id,"H16");
+  assert.equal(fullResistance.players.Bacteria.deck.length,deck-1);
+  assert.equal(view(fullResistance,"Host").canUndo,true);
+  act(fullResistance,"Host",{type:"undo"});
+  assert.deepEqual(fullResistance.players.Host.hand,["H16","H04"]);
+  assert.equal(fullResistance.board[0].slots[0].tucked.length,0);
+  assert.equal(fullResistance.players.Bacteria.deck.length,deck);
+
+  const protectedStack = fixture("N01","Bacteria",[],["B16"]);
+  protectedStack.board[0].slots[0]={...piece("H19"),tucked:[
+    {...piece("B32"),antibioticTuck:{match:"OPTIMAL",remote:false}}
+  ]};
+  act(protectedStack,"Bacteria",{type:"play",card:"B16",site:"N01",slot:1,pay:[]});
+  assert.equal(protectedStack.pending,null);
+  assert.equal(protectedStack.board[0].slots[0].id,"H19");
+
+  const ivDraw = boonFixture("N01");
+  ivDraw.players.Bacteria.hand=["B04:2"];
+  ivDraw.players.Bacteria.discard=["B05","B06"];
+  act(ivDraw,"Host",{type:"end"});
+  assert.equal(ivDraw.pending,null);
+  assert.equal(view(ivDraw,"Bacteria").discardDraw,true);
+  act(ivDraw,"Bacteria",{type:"drawCard"});
+  assert.equal(ivDraw.pending.kind,"discardDraw");
+  act(ivDraw,"Bacteria",{type:"choose",selected:["B05"]});
+  assert.equal(ivDraw.players.Bacteria.hand[0],"B05");
+  assert.deepEqual(ivDraw.players.Bacteria.discard,["B06"]);
+  console.log("Verified full-site Resistance, Undo, Optimal stack protection and Peripheral IV draw recovery.");
 }
 const cns = boonFixture("N05");
 act(cns,"Host",{type:"end"});
@@ -281,7 +400,7 @@ skinSynergy.board[0]={id:"N09",slots:[piece("B16"),piece("H04"),null,null,null,n
 skinSynergy.players.Host.deck=[];
 act(skinSynergy,"Host",{type:"end"});
 assert.equal(skinSynergy.scores.Bacteria.synergy,2);
-assert.equal(skinSynergy.scores.Host.synergy,2);
+assert.equal(skinSynergy.scores.Host.synergy,0);
 for (const [bacterium, drug] of [
   ["B06","H22"], ["B26","H22"], ["B30","H28"], ["B32","H16"],
   ["B36","H28"], ["B38","H19"], ["B55","H32"], ["B68","H28"],
@@ -293,8 +412,8 @@ for (const [bacterium, drug] of [
     const cost = view(match,"Host").legal[drug].cost;
     act(match,"Host",{type:"play",card:drug,site:"N01",slot:1,pay:match.players.Host.hand.slice(1,1+cost)});
     assert.equal(match.board[0].slots[0].id,bacterium);
-    assert.equal(match.players.Bacteria.deck.length,deck-Number(enabled));
-    assert.equal(Boolean(match.spentReactions[bacterium]),enabled);
+    assert.equal(match.players.Bacteria.deck.length,deck-1);
+    assert.equal(match.board[0].slots[0].tucked[0].id,drug);
   }
 }
 const wrongSite = fixture("N01","Host",["B32"],["H16","H10","H11","H17","H12","H13","H14","H15"]);
@@ -306,23 +425,16 @@ act(wrongSite,"Bacteria",{type:"end"});
 wrongSite.spentReactions.B32 = true;
 const secondCost = view(wrongSite,"Host").legal.H17.cost;
 act(wrongSite,"Host",{type:"play",card:"H17",site:"N01",slot:1,pay:wrongSite.players.Host.hand.filter(id=>id!=="H17").slice(0,secondCost)});
-assert.equal(wrongSite.players.Bacteria.deck.length,mrsaDraws);
+assert.equal(wrongSite.players.Bacteria.deck.length,mrsaDraws-1);
 assert.equal(wrongSite.board[0].slots[0].id,"B32");
 
 const resistance = fixture("N01","Host",["B23"],["H22","H10","H11","H12"]);
+const resistanceDeck = resistance.players.Bacteria.deck.length;
 act(resistance,"Host",{type:"play",card:"H22",site:"N01",slot:1,pay:["H10","H11","H12"]});
-assert.equal(resistance.pending.kind,"resistance");
-assert.equal(view(resistance,"Host").pending.kind,undefined);
-act(resistance,"Bacteria",{type:"choose",selected:["tuck"]});
-assert.equal(resistance.board.find((s) => s.id==="N01").slots[0].tucked[0].id,"H22");
-assert.equal(view(resistance,"Host").spentReactions.B23,true);
-const reactionDeck = resistance.players.Bacteria.deck.length;
-resistance.players.Host.hand = ["H23","H07","H08","H10","H11"];
-act(resistance,"Host",{type:"end"});
-act(resistance,"Bacteria",{type:"end"});
-act(resistance,"Host",{type:"play",card:"H23",site:"N01",slot:1,pay:["H07","H08","H10","H11"]});
 assert.equal(resistance.pending,null);
-assert.equal(resistance.players.Bacteria.deck.length,reactionDeck);
+assert.equal(resistance.players.Bacteria.deck.length,resistanceDeck-1);
+assert.equal(resistance.board[0].slots[0].tucked[0].id,"H22");
+assert.equal(resistance.board[0].slots[0].id,"B23");
 
 for (const refresh of [false,true]) {
   const match = fixture("N01","Host",["B03"],["H01","H01:2","H10","H11"]);
@@ -361,12 +473,12 @@ assert.equal(remoteRefuge.pending.job.id,"B12");
 act(remoteRefuge,"Bacteria",{type:"refuge",destination:"N03"});
 assert.equal(remoteRefuge.board.find(s=>s.id==="N03").slots[0].id,"B12");
 
-const railObjectives = fixture("N01","Host",["B04","B46","B06"],["H22","H10","H11","H12"]);
+const railObjectives = fixture("N01","Host",["B04","B46"],["H22","H10","H11","H12"]);
 railObjectives.players.Host.goals = ["G22","G23"];
 railObjectives.players.Bacteria.goals = ["G19"];
 act(railObjectives,"Host",{type:"play",card:"H22",site:"N01",slot:3,pay:["H10","H11","H12"]});
 assert.deepEqual(view(railObjectives,"Host").objectivePoints,{G22:8,G23:0});
-assert.deepEqual(view(railObjectives,"Bacteria").objectivePoints,{G19:7});
+assert.deepEqual(view(railObjectives,"Bacteria").objectivePoints,{G19:0});
 railObjectives.board[0].slots[2] = null;
 assert.deepEqual(view(railObjectives,"Bacteria").objectivePoints,{G19:0});
 
@@ -380,6 +492,7 @@ assert.deepEqual(view(distantObjective,"Host").objectivePoints,{G23:0});
 
 const newOrganisms = fixture("N01","Host",[],[]);
 newOrganisms.board[0] = {id:"N05",slots:[piece("B46"),piece("B66"),null,null,null,null]};
+newOrganisms.board[1].id = "N08";
 newOrganisms.board[1].slots[0] = piece("B48");
 newOrganisms.board[1].slots[1] = piece("B51");
 newOrganisms.players.Bacteria.goals=["G20","G21"];
@@ -387,7 +500,7 @@ newOrganisms.players.Host.goals=["G24"];
 newOrganisms.board[3].slots[0] = {...piece("H03"),tucked:[piece("B55"),piece("B68")]};
 assert.deepEqual(view(newOrganisms,"Bacteria").objectivePoints,{G20:7,G21:6});
 assert.deepEqual(view(newOrganisms,"Host").objectivePoints,{G24:7});
-newOrganisms.board[1].slots[1] = piece("B49");
+newOrganisms.board[1].slots[1] = null;
 newOrganisms.board[3].slots[0].tucked = [piece("B06"),piece("B06:2")];
 assert.deepEqual(view(newOrganisms,"Bacteria").objectivePoints,{G20:7,G21:0});
 assert.deepEqual(view(newOrganisms,"Host").objectivePoints,{G24:0});
@@ -424,7 +537,7 @@ for (const visible of [false,true]) {
 for (const destination of ["N01","N02"]) {
   const match = fixture("N01","Bacteria",["H34"],["B02","B01"]);
   act(match,"Bacteria",{type:"play",card:"B02",site:destination,slot:1,pay:[]});
-  assert.equal(match.pending?.kind,destination==="N01"?undefined:"bonus");
+  assert.equal(match.pending?.kind,"bonus");
 }
 
 const limit = fixture("N01","Bacteria",[],[]);
@@ -500,19 +613,19 @@ assert.equal(economy.players.Host.hand.length,6);
 
 const duplicateResistance = fixture("N01","Host",["B23","B23:2"],["H22:2","H10","H11","H12"]);
 act(duplicateResistance,"Host",{type:"play",card:"H22:2",site:"N01",slot:2,pay:["H10","H11","H12"]});
-assert.equal(duplicateResistance.pending.kind,"resistance");
-act(duplicateResistance,"Bacteria",{type:"choose",selected:["draw"]});
-assert.equal(duplicateResistance.pending.id,"B23:2");
-act(duplicateResistance,"Bacteria",{type:"choose",selected:["tuck"]});
-assert.equal(duplicateResistance.board.find((site)=>site.id==="N01").slots[1].tucked[0].id,"H22:2");
+assert.equal(duplicateResistance.pending.kind,"resistPlay");
+assert.equal(view(duplicateResistance,"Host").pending.choices,undefined);
+act(duplicateResistance,"Bacteria",{type:"choose",selected:["B23:2"]});
+assert.equal(duplicateResistance.board[0].slots[1].tucked[0].id,"H22:2");
+assert.equal(duplicateResistance.board[0].slots[0].tucked.length,0);
 
 for (const hostBalance of [false, true]) {
   const prices = fixture("N01","Host",[],["H02:2","H05","H04"]);
   if (!hostBalance) delete prices.hostBalance;
-  assert.equal(view(prices,"Host").legal["H02:2"].cost,hostBalance ? 0 : 1);
-  assert.equal(view(prices,"Host").legal.H05.cost,hostBalance ? 0 : 1);
-  act(prices,"Host",{type:"play",card:"H05",site:"N01",slot:0,pay:hostBalance ? [] : ["H04"]});
-  assert.equal(prices.players.Host.discard.length,hostBalance ? 0 : 1);
+  assert.equal(view(prices,"Host").legal["H02:2"].cost,0);
+  assert.equal(view(prices,"Host").legal.H05.cost,0);
+  act(prices,"Host",{type:"play",card:"H05",site:"N01",slot:0,pay:[]});
+  assert.equal(prices.players.Host.discard.length,0);
 
   const attack = fixture("N02","Host",["B31:2","B16"],["H16","H04"]);
   if (!hostBalance) delete attack.hostBalance;
@@ -587,7 +700,7 @@ for (let i = 0; i < 20; i++) {
         const [card, legal] = order[steps % Math.min(order.length, 3)];
         const site = legal.sites[steps % legal.sites.length];
         const open = state.board.find((n) => n.id === site).slots.indexOf(null);
-        const slot = open < 0 ? 6 : open;
+        const slot = open < 0 ? state.siteCapacity : open;
         act(match, f, {type:"play",card,site,slot,pay:state.hand.filter((k) => k !== card).slice(0,legal.cost)});
       }
     }
@@ -681,9 +794,9 @@ for (const step of firstGameSteps.slice(1)) {
 assert.equal(guided.board[1].slots[1].tucked[0].id,"B32");
 assert.equal(guided.board[1].slots[1].tucked[0].antibioticTuck.match,"OPTIMAL");
 assert.deepEqual(guided.playedPoints.map(play => play.tucked), [false, false, true]);
-assert.equal(score(guided,"Host").tuck,1);
+assert.equal(score(guided,"Host").tuck,4);
 console.log("Verified the fixed tutorial from objective selection to the vancomycin tuck.");
 
-console.log("Verified two private seats, invite race, illegal payment, stale writes, resistance, Refuge, Suppress and final scoring.");
+console.log("Verified two private seats, invite race, illegal payment, stale writes, Resistance, Evade, Block Go Again and final scoring.");
 console.log("Verified three actions, top-discard recovery and card conservation across 20 complete games.");
 console.log("Verified Pass & Play privacy for objective selection, turn changes, reactions and final scoring.");

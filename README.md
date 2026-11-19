@@ -16,7 +16,7 @@ Use **Tutorial** for a quick explanation of how to play, **Glossary** to look up
 4. Choose **Play** on a hand card. For a paid play, mark the required number of **other** hand cards as payment. Choose a highlighted open space to commit the play. The server validates the price, location and turn.
 5. Follow prompts for targets, bonus plays, Refuge and other reactions. End your turn when done. If over 12 cards, choose which to discard.
 
-New matches start with six cards. Bacteria draws from 94 cards, including one copy of each of the 22 expansion designs. Host draws from 72 cards. Each turn gives three actions. Spend each action to play a card at its usual cost, draw one card from your deck, or take the face-up top card of your discard. Repeat any action you can afford, in any order. There is no automatic turn draw. You may end early and discard down to 12 if needed. The game scores at the end of the turn when either draw deck is empty, or when a board end condition is met. Saved matches keep their original decks.
+New matches start with six cards. Bacteria draws from 103 cards, including one copy of each expansion design through B76. Host draws from 72 cards. Each turn gives three actions. Spend each action to play a card at its usual cost, draw one card from your deck, or take the face-up top card of your discard. Repeat any action you can afford, in any order. There is no automatic turn draw. You may end early and discard down to 12 if needed. The game scores at the end of the turn when either draw deck is empty, or when a board end condition is met. Saved matches keep their original decks.
 
 Each new match draws four different sites from a pool of twelve, with six shared spaces apiece. To unlock a site's boon, start your turn with at least three of your visible cards there and more than your opponent. A 3–3 tie grants neither player a boon. The board lists each site's boon and faction synergies.
 
@@ -43,9 +43,9 @@ In new matches, Neutrophil Recruitment (H02) and Macrophage Antigen Presentation
 
 At a full site, an on-play tuck card can use the temporary seventh space if it has an eligible local target. You must choose a local attack. The played card moves into the space opened by the tuck or by the target moving with Refuge.
 
-**Resistance** applies when an antibiotic played at the same site has a Resistance match with B22 or B23. Each copy gets one antibiotic reaction per game. On a Resistance match it draws after the attack, and B23 can tuck an antibiotic that caught nothing instead. B23 can also spend its reaction to draw after another Host antibiotic play if B23 is still visible.
+**Resistance** prevents a matching antibiotic tuck. Each visible bacterium with an unused R reaction draws one card after a matching antibiotic is played at its site and its attack resolves. Each copy has one reaction per game.
 
-**Suppress** is persistent while the antibiotic remains visible. H34 stops bonus plays granted by Bacteria played at its site. H36 stops Bacteria from using Go Again anywhere on the board.
+**Block Go Again** applies while its card is visible. H36 and B74 prevent the opposing faction from taking an extra turn.
 
 Keep the same browser tab open or reload it to retain its saved seat. There is no account-based seat recovery. Rooms expire after 14 days without a move. Use a separate tab or browser profile for the second seat when testing alone.
 
