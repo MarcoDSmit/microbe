@@ -587,7 +587,7 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   align-content:center;
   min-height:100dvh;
   padding:clamp(.65rem,2vw,2rem);
-  background-position:center;
+  background-position:55% center;
   background-size:cover;
 }
 .lunar-console {width:min(100%,19rem);justify-self:start}
