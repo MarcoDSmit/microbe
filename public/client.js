@@ -371,11 +371,11 @@ const compactBoons = {
   discount: "First play costs 1 fewer discard",
   extraPlay: "Make 1 extra play at usual cost",
   focusedDraw: "First draw action draws 2 cards",
-  recirculate: "Discard 1 to recover the previous top 2 discards",
-  digest: "Keep 1 of the top 2 deck cards and discard the other",
+  recirculate: "Trade 1 card for your previous top 2 discards",
+  digest: "Look at top 2: keep 1, discard 1",
   rebate: "Draw 1 after your first paid play here",
-  relocate: "Move 1 of your cards here with its tucked cards",
-  survey: "Look at top 2 deck cards: put 1 on top and 1 on bottom",
+  relocate: "Move 1 of your cards here with its stack",
+  survey: "Look at top 2: top 1, bottom 1",
   tradeDraw: "Discard 1 to draw 2",
   tuckDraw: "Draw 1 when you first tuck an opposing card",
 };
@@ -423,9 +423,9 @@ function renderBoard() {
       const boon = game.uniqueSiteBoons ? info.boon : info.legacyBoon ?? info.boon;
       const fullBoon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
       return '<section class="node" data-board-site="' + safe(site.id) + '" aria-label="' + safe(info.name) + '">' +
-        '<header class="clinical-site">' + clinicalIcon(site.id) + '<div><p title="' + safe(fullBoon) +
+        '<header class="clinical-site"><div class="clinical-site-boon">' + clinicalIcon(site.id) + '<p title="' + safe(fullBoon) +
         '">' + safe(compactBoons[boon] ?? fullBoon) + '</p>' +
-        '<p>+2 VP matching Bacteria · +2 VP per other Immune</p></div></header>' +
+        '</div><p class="clinical-site-synergy">+2 VP matching Bacteria · +2 VP per other Immune</p></header>' +
         '<div class="grid portrait-slots" style="--site-columns:' + (capacity / 2) + '">' + cells.join("") +
         '</div>' + tuckSpace + '</section>';
     }).join("") + '</div>';

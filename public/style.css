@@ -597,14 +597,19 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 .site-navigation button .clinical-icon {width:1.55rem;height:1.55rem}
 .board .clinical-site {
   --banner-height:clamp(7.5rem,32vw,9rem);
-  display:grid;grid-template-rows:18% 60% 22%;place-items:center;
+  display:grid;grid-template-rows:3% 13% 64% 17% 3%;place-items:center;
   width:min(100%,30rem);height:var(--banner-height);margin:0 auto .3rem;
   background:url("/board-art/orbital-microscopy-lab.webp") center / 100% 100% no-repeat;
 }
-.clinical-site > .clinical-icon {width:1.25rem;height:1.25rem;grid-row:1}
-.clinical-site > div {grid-row:3;text-align:center;max-width:88%;line-height:1.1}
-.clinical-site p {margin:0;color:#edf7ff;font-size:clamp(.68rem,2.7vw,.86rem)}
-.clinical-site p + p {color:#bcd2de;font-size:clamp(.6rem,2.35vw,.73rem)}
+.clinical-site-boon {
+  grid-row:2;display:flex;align-items:center;justify-content:center;gap:.35rem;
+  width:88%;text-align:center;color:#edf7ff;font-size:clamp(.63rem,2.55vw,.86rem);line-height:1.05;
+}
+.clinical-site-boon .clinical-icon {flex:none;width:.9rem;height:.9rem}
+.clinical-site-synergy {
+  grid-row:4;max-width:88%;text-align:center;color:#bcd2de;
+  font-size:clamp(.6rem,2.35vw,.73rem);line-height:1.1;
+}
 .board .portrait-slots {grid-template-columns:repeat(var(--site-columns),minmax(0,1fr));gap:.35rem;width:min(100%,27rem);margin-inline:auto}
 .board .portrait-slots .slot {position:relative;aspect-ratio:5 / 7;min-height:0;padding:0;overflow:hidden;background:#08141d}
 .board .portrait-slots .slot.empty {
