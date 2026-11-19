@@ -590,20 +590,21 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   background-position:center;
   background-size:cover;
 }
-.lunar-console {width:min(100%,19rem);justify-self:center}
+.lunar-console {width:min(100%,19rem);justify-self:start}
 .lunar-console .lobby-mode.art-button img {height:auto;object-fit:contain}
 body:has(.lunar-lobby) .masthead {justify-content:center}
 .clinical-icon {display:block;width:2rem;height:2rem;object-fit:contain}
 .site-navigation button .clinical-icon {width:1.55rem;height:1.55rem}
-.clinical-site {display:flex;align-items:center;justify-content:center;gap:.55rem;padding:.35rem .25rem}
 .board .clinical-site {
-  border:solid transparent;border-width:5px 12px;
-  border-image:url("/board-art/N01.webp") 6 28 stretch;
-  margin-bottom:.25rem;
+  --banner-height:clamp(7.5rem,32vw,9rem);
+  display:grid;grid-template-rows:18% 60% 22%;place-items:center;
+  width:min(100%,30rem);height:var(--banner-height);margin:0 auto .3rem;
+  background:url("/board-art/orbital-microscopy-lab.webp") center / 100% 100% no-repeat;
 }
-.clinical-site > .clinical-icon {width:2.75rem;height:2.75rem}
-.clinical-site p {margin:0;color:#edf7ff;font-size:clamp(.73rem,2.8vw,.9rem)}
-.clinical-site p + p {color:#bcd2de;font-size:.72rem}
+.clinical-site > .clinical-icon {width:1.25rem;height:1.25rem;grid-row:1}
+.clinical-site > div {grid-row:3;text-align:center;max-width:88%;line-height:1.1}
+.clinical-site p {margin:0;color:#edf7ff;font-size:clamp(.68rem,2.7vw,.86rem)}
+.clinical-site p + p {color:#bcd2de;font-size:clamp(.6rem,2.35vw,.73rem)}
 .board .portrait-slots {grid-template-columns:repeat(var(--site-columns),minmax(0,1fr));gap:.35rem;width:min(100%,27rem);margin-inline:auto}
 .board .portrait-slots .slot {position:relative;aspect-ratio:5 / 7;min-height:0;padding:0;overflow:hidden;background:#08141d}
 .board .portrait-slots .slot.empty {
@@ -620,5 +621,5 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
   .match-screen.compact-match:not(.hand-expanded) .board-focus {height:clamp(14rem,62dvh,40rem)}
   .match-screen.compact-match.hand-expanded .board-focus {height:clamp(12rem,41dvh,29rem)}
   .match-screen.compact-match.hand-expanded .hand-dock .hand.expanded {--peek-height:33dvh}
-  .match-screen .board-focus .portrait-slots {width:min(100%,max(5rem,calc((100cqh - 5rem) * .71)),25rem)}
+  .match-screen .board-focus .portrait-slots {width:min(100%,max(5rem,calc((100cqh - clamp(7.5rem,32vw,9rem) - 1rem) * .71)),25rem)}
 }
