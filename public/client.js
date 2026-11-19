@@ -425,7 +425,7 @@ function renderBoard() {
       return '<section class="node" data-board-site="' + safe(site.id) + '" aria-label="' + safe(info.name) + '">' +
         '<header class="clinical-site"><div class="clinical-site-boon">' + clinicalIcon(site.id) + '<p title="' + safe(fullBoon) +
         '">' + safe(compactBoons[boon] ?? fullBoon) + '</p>' +
-        '</div><p class="clinical-site-synergy">+2 VP matching Bacteria · +2 VP per other Immune</p></header>' +
+        '</div></header>' +
         '<div class="grid portrait-slots" style="--site-columns:' + (capacity / 2) + '">' + cells.join("") +
         '</div>' + tuckSpace + '</section>';
     }).join("") + '</div>';

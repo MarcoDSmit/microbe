@@ -606,10 +606,6 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
   width:88%;text-align:center;color:#edf7ff;font-size:clamp(.63rem,2.55vw,.86rem);line-height:1.05;
 }
 .clinical-site-boon .clinical-icon {flex:none;width:.9rem;height:.9rem}
-.clinical-site-synergy {
-  grid-row:4;max-width:88%;text-align:center;color:#bcd2de;
-  font-size:clamp(.6rem,2.35vw,.73rem);line-height:1.1;
-}
 .board .portrait-slots {grid-template-columns:repeat(var(--site-columns),minmax(0,1fr));gap:.35rem;width:min(100%,27rem);margin-inline:auto}
 .board .portrait-slots .slot {position:relative;aspect-ratio:5 / 7;min-height:0;padding:0;overflow:hidden;background:#08141d}
 .board .portrait-slots .slot.empty {
