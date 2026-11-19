@@ -622,5 +622,5 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
   .match-screen.compact-match:not(.hand-expanded) .board-focus {height:clamp(14rem,62dvh,40rem)}
   .match-screen.compact-match.hand-expanded .board-focus {height:clamp(12rem,41dvh,29rem)}
   .match-screen.compact-match.hand-expanded .hand-dock .hand.expanded {--peek-height:33dvh}
-  .match-screen .board-focus .portrait-slots {width:min(100%,max(5rem,calc((100cqh - clamp(7.5rem,32vw,9rem) - 1rem) * .71)),25rem)}
+  .match-screen .board-focus .portrait-slots {width:min(100%,21rem)}
 }

@@ -426,7 +426,7 @@ function renderBoard() {
         '<header class="clinical-site"><div class="clinical-site-boon">' + clinicalIcon(site.id) + '<p title="' + safe(fullBoon) +
         '">' + safe(compactBoons[boon] ?? fullBoon) + '</p>' +
         '</div></header>' +
-        '<div class="grid portrait-slots" style="--site-columns:' + (capacity / 2) + '">' + cells.join("") +
+        '<div class="grid portrait-slots" style="--site-columns:' + (capacity === 4 ? 4 : capacity / 2) + '">' + cells.join("") +
         '</div>' + tuckSpace + '</section>';
     }).join("") + '</div>';
 }
