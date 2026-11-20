@@ -18,8 +18,8 @@ SIGN THE RELEASE
 6. Upload that signed .aab to Play Console. Let Google Play App Signing manage the app signing key. Keep your upload key for future releases.
 The application ID becomes permanent when the app is registered. Each later upload needs a higher versionCode in android/app/build.gradle.
 
-REVIEW BEFORE PUBLIC SUBMISSION
-The captured Library and tutorial screens show card artwork with blank ability and synergy panels. The current UI places the corresponding rules text in screen-reader-only elements when artwork is present. Review the latest card export and restore visible ability and synergy text before public submission. The included files are a release preparation and testing pack.
+BUILD APPROVAL
+The developer confirmed on 20 November 2026 that card readability on the current installation is correct and blank panels are intentional when no effect applies. The build is approved for signing and closed testing. Complete signing, store declarations and the applicable Google Play testing and review process before public publication.
 
 CREATE THE PLAY CONSOLE APP
 1. Create app. Use Microbe Wars, English, Game and Free.
