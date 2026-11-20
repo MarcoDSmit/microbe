@@ -13,7 +13,7 @@ const stackSize = piece => piece.tucked.reduce((n, child) => n + 1 + stackSize(c
 const holdsOptimal = piece => piece.tucked.some(child => child.antibioticTuck?.match === "OPTIMAL");
 const tuckPoints = piece => cards[piece.id].type === "Antibiotic"
   ? 2 * (stackSize(piece) + piece.tucked.filter(child => child.antibioticTuck?.match === "OPTIMAL").length)
-  : cards[piece.id].tuck * stackSize(piece);
+  : (cards[piece.id].faction === "Bacteria" ? 1 : cards[piece.id].tuck) * stackSize(piece);
 const hiddenAntibioticPoints = piece => piece.tucked.reduce((n, child) => n +
   (cards[piece.id].faction === "Bacteria" && cards[child.id].type === "Antibiotic" ? stackSize(child) : 0) +
   hiddenAntibioticPoints(child), 0);
@@ -53,21 +53,39 @@ const majority = (site) => {
 const space = (site) => site.slots.indexOf(null);
 const task = (s, ...jobs) => s.queue.unshift(...jobs);
 
-export function newGame(random = secureRandom) {
+function shuffledObjectives(eligible, random, previous = []) {
+  const deck = shuffle(eligible, random);
+  const sameOffer = previous.length === 3 && deck.slice(0,3).every(id => previous.includes(id));
+  if (sameOffer && deck.length > 3) {
+    const offered = Math.floor(random()*3);
+    const replacement = 3+Math.floor(random()*(deck.length-3));
+    [deck[offered],deck[replacement]] = [deck[replacement],deck[offered]];
+  }
+  return deck;
+}
+
+function objectiveRandom(s) {
+  s.objectiveRandomState = (Math.imul(s.objectiveRandomState ?? 0x9e3779b9,1664525)+1013904223) >>> 0;
+  return s.objectiveRandomState / 4294967296;
+}
+
+export function newGame(random = secureRandom, previousOffers = {}) {
   const players = {};
   const board = shuffle(sites, random).slice(0, 4).map(({id}) => ({ id, slots: Array(4).fill(null) }));
   const activeSites = new Set(board.map(site => site.id));
   for (const f of sides) {
     const deck = shuffle(Object.keys(catalog).filter((id) => catalog[id].faction === f)
       .flatMap((id) => [id, id + ":2"].slice(0, catalog[id].copies ?? 2)), random);
-    const goalDeck = shuffle(Object.keys(goals).filter((id) => goals[id].faction === f &&
-      (goals[id].requiresSites ?? []).every(site => activeSites.has(site))), random);
+    const goalDeck = shuffledObjectives(Object.keys(goals).filter((id) => goals[id].faction === f &&
+      (goals[id].requiresSites ?? []).every(site => activeSites.has(site))), random, previousOffers[f]);
     players[f] = { deck, hand: deck.splice(0, 6), discard: [], goalDeck, goals: [],
       offer: goalDeck.splice(0, 3), goalDiscard:[], turns: 0 };
   }
   const first = sides[Math.floor(random() * sides.length)];
   return {
-    status: "waiting", siteCapacity: 4, first, turn: first, turnNumber: 0, players,
+    status: "waiting", siteCapacity: 4, first,
+    objectiveRandomState:Math.floor(random()*4294967296),
+    objectiveOffers:Object.fromEntries(sides.map(f => [f,[...players[f].offer]])), turn: first, turnNumber: 0, players,
     board, series:{Bacteria:0, Host:0, ties:0}, playedPoints:[], spentReactions:{},
     queue: [], pending: null, log: ["The two decks are shuffled."],
     actionRules: true, hostBalance: true, uniqueSiteBoons: true, expandedResistance: true, slots: 0, jointPlay: false, discount: 0, nextExtra: false, extra: false, exhausted: false, scores: null,
@@ -250,7 +268,9 @@ function pump(s) {
         break;
       }
       case "draft": {
-        const choices = s.players[job.f].goalDeck.splice(0, job.count);
+        const player = s.players[job.f];
+        player.goalDeck = shuffle(player.goalDeck, () => objectiveRandom(s));
+        const choices = player.goalDeck.splice(0, job.count);
         if (choices.length === 1) s.players[job.f].goals.push(choices[0]);
         else if (choices.length) s.pending = { kind: "draft", f: job.f, choices, min: 1, max: 1,
           prompt: "Choose one secret objective to keep." };
@@ -501,7 +521,7 @@ function applyAction(s, f, action) {
   requireRule(action && typeof action === "object" && !Array.isArray(action), "Choose an action.");
   if (action.type === "rematch") {
     requireRule(s.status === "finished", "Finish the match before starting a rematch.");
-    return { ...newGame(), creatorFaction:s.creatorFaction, status:"objectives",
+    return { ...newGame(undefined,s.objectiveOffers), creatorFaction:s.creatorFaction, status:"objectives",
       series:s.series ?? countSeriesResult(null, s.scores) };
   }
   requireRule(s.status === "playing" || s.status === "objectives", "The match is not ready for a move.");
@@ -725,7 +745,7 @@ export function view(s, f) {
     extra:s.extra, slots:s.slots, actionRules:!!s.actionRules, hostBalance:!!s.hostBalance, jointPlay:!!s.jointPlay,
     uniqueSiteBoons:!!s.uniqueSiteBoons, focusedDraw:!!s.sitePerks?.focusedDraw, discardDraw:!!s.sitePerks?.discardDraw,
     discount:s.discount, siteCapacity:capacity(s), board:s.board, log:s.log,
-    tuckPoints:Object.fromEntries(visible(s, "Host").map(piece => [piece.id, tuckPoints(piece)])),
+    tuckPoints:Object.fromEntries(visible(s).map(piece => [piece.id, tuckPoints(piece)])),
     sitePoints:liveSitePoints(s), patientHealth:s.patientHealth ?? {band:0, leftCenter:false},
     playedPoints:s.playedPoints ?? [], spentReactions:s.spentReactions ?? {},
     startedAt:s.startedAt ?? null, endedAt:s.endedAt ?? null,

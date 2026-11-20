@@ -619,8 +619,61 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 @media (orientation:portrait) {
   .match-screen .board-overview {grid-template-columns:minmax(0,1fr)}
   .match-screen .board-focus {container-type:size}
-  .match-screen.compact-match:not(.hand-expanded) .board-focus {height:clamp(14rem,62dvh,40rem)}
-  .match-screen.compact-match.hand-expanded .board-focus {height:clamp(12rem,41dvh,29rem)}
+  .match-screen.compact-match:not(.hand-expanded) .board-focus {height:100%}
+  .match-screen.compact-match.hand-expanded .board-focus {height:100%}
   .match-screen.compact-match.hand-expanded .hand-dock .hand.expanded {--peek-height:33dvh}
   .match-screen .board-focus .portrait-slots {width:min(100%,21rem)}
+}
+
+.clinical-site-title {
+  grid-row:2;display:flex;align-items:center;justify-content:center;gap:.35rem;
+  width:88%;color:#edf7ff;min-width:0;
+}
+.clinical-site-title .clinical-icon {flex:none;width:1.1rem;height:1.1rem}
+.clinical-site-title h3 {font-size:clamp(.72rem,2.9vw,1rem);line-height:1.05;text-align:center}
+.clinical-site-boon {grid-row:4}
+.objective-choices {
+  display:grid;grid-template-columns:repeat(var(--objective-count),minmax(0,1fr));
+  gap:clamp(.3rem,1.5vw,.75rem);width:100%;align-items:start;
+}
+.objective-choice {display:grid;gap:.3rem;min-width:0}
+.objective-peek {display:block;width:100%;padding:0;background:transparent;border:0;min-width:0}
+.objective-choices .objective-peek {aspect-ratio:5 / 7;max-height:40dvh}
+.match-screen .choice .objective-choices .card-art {width:100%;height:100%;max-height:none;margin:0;object-fit:contain}
+.objective-choice > .choice-option {width:100%;text-align:center;min-height:2rem}
+.objective-choice.picked .objective-peek {outline:2px solid #70e8d0;outline-offset:2px;border-radius:.3rem}
+.objective-peek:hover {filter:brightness(1.08)}
+@media (orientation:portrait) {
+  body:has(.compact-match) {height:100dvh;overflow:hidden}
+  #app:has(.compact-match) {height:100%;min-height:0}
+  .match-screen.compact-match {
+    height:100%;min-height:0;grid-template-rows:minmax(0,1fr);padding:.25rem .4rem .4rem;gap:.25rem;
+  }
+  .compact-match .layout {height:100%;min-height:0;display:block}
+  .compact-match .tabletop {height:100%;min-height:0;grid-template-rows:minmax(0,1fr) auto;gap:.25rem}
+  .compact-match .board-content {min-height:0;grid-template-rows:auto minmax(0,1fr)}
+  .compact-match .board-focus .node {
+    height:100%;min-height:100%;display:grid;grid-template-rows:auto minmax(0,1fr);
+    align-content:stretch;padding:.25rem;gap:.25rem;
+  }
+  .compact-match .board-focus .node:has(>.tuck-space) {grid-template-rows:auto minmax(0,1fr) auto}
+  .compact-match .board-focus .clinical-site {margin:0 auto}
+  .compact-match:not(.hand-expanded) .board-focus .portrait-slots {
+    width:100%;height:100%;min-height:0;grid-template-columns:repeat(2,minmax(0,1fr));
+    grid-template-rows:repeat(2,minmax(0,1fr));
+  }
+  .compact-match:not(.hand-expanded) .board-focus .portrait-slots .slot {
+    aspect-ratio:auto;min-height:0;height:100%;
+  }
+  .compact-match.hand-expanded .board-focus .portrait-slots {
+    width:100%;height:auto;grid-template-columns:repeat(4,minmax(0,1fr));align-self:start;
+  }
+  .compact-match .board-focus .tuck-space {min-height:1.75rem;padding:.15rem}
+  .compact-match .layout > .aside {
+    position:absolute;z-index:4;inset:.25rem;max-height:100%;overflow:auto;
+  }
+}
+
+@media (orientation:portrait) {
+  .compact-match .board-points-label {display:none}
 }

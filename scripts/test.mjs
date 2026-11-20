@@ -182,10 +182,12 @@ for (const id of ["B69","B70","B71","B72"]) {
   const match = fixture("N01","Bacteria",[],[id,"B04"]);
   const deck = [...match.players.Bacteria.goalDeck];
   act(match,"Bacteria",{type:"play",card:id,site:"N01",slot:0,pay:["B04"]});
-  assert.deepEqual(match.pending.choices,deck.slice(0,2));
-  act(match,"Bacteria",{type:"choose",selected:[deck[0]]});
-  assert.ok(match.players.Bacteria.goals.includes(deck[0]));
-  assert.ok(match.players.Bacteria.goalDiscard.includes(deck[1]));
+  const offered=[...match.pending.choices];
+  assert.equal(offered.length,2);
+  assert.ok(offered.every(id=>deck.includes(id)));
+  act(match,"Bacteria",{type:"choose",selected:[offered[0]]});
+  assert.ok(match.players.Bacteria.goals.includes(offered[0]));
+  assert.ok(match.players.Bacteria.goalDiscard.includes(offered[1]));
 }
 for (const id of ["B73","B75"]) {
   const match = fixture("N01","Bacteria",[],[id,"B04","B07"]);
@@ -216,6 +218,38 @@ else data.cards.H27.effects.goAgain=originalGoAgain;
 console.log("Verified approved CSV effects, new organisms, local multi-tuck choices, objective drafting and both Go Again blockers.");
 
 }
+{
+  const bacterialStack = fixture("N01","Bacteria",["H01"],["B16"]);
+  bacterialStack.board[0].slots[0].tucked=[{...piece("B04"),tucked:[piece("H04")]}];
+  act(bacterialStack,"Bacteria",{type:"play",card:"B16",site:"N01",slot:1,pay:[]});
+  act(bacterialStack,"Bacteria",{type:"choose",selected:["H01"]});
+  assert.equal(score(bacterialStack,"Bacteria").tuck,3);
+  assert.equal(view(bacterialStack,"Bacteria").tuckPoints.B16,3);
+  assert.match(tuckScoreLabel(data.cards.B16),/1 VP per tuck/);
+
+  const resistant = fixture("N01","Host",["B32"],["H16","H04"]);
+  const before=score(resistant,"Bacteria").total;
+  act(resistant,"Host",{type:"play",card:"H16",site:"N01",slot:1,pay:["H04"]});
+  assert.equal(score(resistant,"Bacteria").total,before+1);
+  assert.equal(view(resistant,"Host").tuckPoints.B32,1);
+
+  const first=newGame(random);
+  const second=newGame(random,first.objectiveOffers);
+  for(const side of ["Bacteria","Host"]){
+    assert.notDeepEqual([...first.players[side].offer].sort(),[...second.players[side].offer].sort());
+    assert.equal(new Set([...second.players[side].offer,...second.players[side].goalDeck]).size,
+      second.players[side].offer.length+second.players[side].goalDeck.length);
+  }
+  const draft=fixture("N01","Bacteria",[],["B69","B04"]);
+  const clone=structuredClone(draft);
+  const action={type:"play",card:"B69",site:"N01",slot:0,pay:["B04"]};
+  act(draft,"Bacteria",action);
+  act(clone,"Bacteria",action);
+  assert.deepEqual(draft.pending.choices,clone.pending.choices);
+  assert.equal(draft.objectiveRandomState,clone.objectiveRandomState);
+  console.log("Verified bacterial stack VP, live tuck badges, fresh opening offers and replayable objective shuffles.");
+}
+
 const seenSites = new Set(), seenBoards = new Set();
 let rngState = 80310;
 const siteRandom = () => ((rngState = (Math.imul(rngState,1664525)+1013904223) >>> 0) / 4294967296);
@@ -723,7 +757,7 @@ for (let i = 0; i < 20; i++) {
 }
 
 assert.equal(tuckScoreLabel(data.cards.B04), "");
-assert.match(tuckScoreLabel(data.cards.B16), /0 VP per tuck/);
+assert.match(tuckScoreLabel(data.cards.B16), /1 VP per tuck/);
 assert.match(tuckScoreLabel(data.cards.H16), /1 VP per tuck/);
 let hardDecisions = 0;
 for (const hardFaction of ["Bacteria", "Host"]) {

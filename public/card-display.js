@@ -1,8 +1,8 @@
 export const cardArtUrl = id => "/card-art/" + id.split(":")[0] + ".webp";
 
 export function tuckScoreLabel(card) {
-  const canTuck = !!card.effects?.attack || ["Ambush", "Inducible Response"].includes(card.abilityName);
-  return card.tuck > 0 || canTuck ? " · " + card.tuck + " VP per tuck" : "";
+  const canTuck = !!card.resist?.length || !!card.effects?.attack || ["Ambush", "Inducible Response"].includes(card.abilityName);
+  return card.tuck > 0 || canTuck ? " · " + (card.faction === "Bacteria" ? 1 : card.tuck) + " VP per tuck" : "";
 }
 
 export const matchGlyphs = {

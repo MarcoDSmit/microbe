@@ -53,6 +53,11 @@ const modeKey = "microbe-wars.mobile-mode";
 const localSaves = mobileCatalog ? localStorage : sessionStorage;
 if (mobileCatalog) document.documentElement.classList.add("mobile-build");
 const soloKey = "microbe-wars.solo";
+const objectiveOffersKey = "microbe-wars.previous-objective-offers";
+function previousObjectiveOffers() {
+  try { return JSON.parse(localStorage.getItem(objectiveOffersKey)) ?? {}; }
+  catch { return {}; }
+}
 const saved = (() => { try { return JSON.parse(sessionStorage.getItem(storeKey)); } catch { return null; } })();
 const fragment = new URLSearchParams(location.hash.slice(1));
 const incoming = { code: fragment.get("room"), invite: fragment.get("invite") };
@@ -60,6 +65,7 @@ let data, game = null, seat = null, busy = false, error = "", notice = "";
 let picked = null, payment = new Set(), selected = new Set(), inspect = null;
 let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
+let objectivePreview = null;
 let handPreview = null, focusedSite = null, boardOverview = false;
 let localMatch = null, revealed = null;
 let firstGameStep = null, guideTuckSeen = false;
@@ -188,6 +194,9 @@ async function transact(path, body, isMove = false) {
   }
 }
 function saveLocal() {
+  if(localMatch?.objectiveOffers) {
+    try { localStorage.setItem(objectiveOffersKey,JSON.stringify(localMatch.objectiveOffers)); } catch {}
+  }
   try {
     if (mobileCatalog) localSaves.setItem(modeKey, soloFaction ? "#solo" : "#pass-play");
     localSaves.setItem(soloFaction ? soloKey : passKey,
@@ -213,7 +222,7 @@ function syncLocal() {
     game = passPlayView(localMatch, revealed, view);
   }
   picked = null; inspect = null; payment.clear(); selected.clear(); paymentMode = false;
-  dropSpace = null; sidePanel = null; handPreview = null;
+  dropSpace = null; sidePanel = null; handPreview = null; objectivePreview = null;
   render();
 }
 
@@ -404,7 +413,7 @@ function renderBoard() {
         if (piece) {
           const card = cardOf(piece.id);
           const amount = game.tuckPoints?.[piece.id] ?? 0;
-          const tuck = card.faction === "Host" ? '<span class="tuck-vp">Tuck +' + amount + ' VP</span>' : "";
+          const tuck = card.faction === "Host" || amount > 0 ? '<span class="tuck-vp">Tuck +' + amount + ' VP</span>' : "";
           return '<button class="slot occupied" data-action="inspect" data-id="' + safe(piece.id) +
             '" aria-label="' + safe(card.name + (tuck ? ", tuck " + amount + " VP" : "")) + '">' +
             cardArt(piece.id,"board-card-art") + tuck + '</button>';
@@ -423,9 +432,9 @@ function renderBoard() {
       const boon = game.uniqueSiteBoons ? info.boon : info.legacyBoon ?? info.boon;
       const fullBoon = game.uniqueSiteBoons ? info.power : info.legacyPower ?? info.power;
       return '<section class="node" data-board-site="' + safe(site.id) + '" aria-label="' + safe(info.name) + '">' +
-        '<header class="clinical-site"><div class="clinical-site-boon">' + clinicalIcon(site.id) + '<p title="' + safe(fullBoon) +
-        '">' + safe(compactBoons[boon] ?? fullBoon) + '</p>' +
-        '</div></header>' +
+        '<header class="clinical-site"><div class="clinical-site-title">' + clinicalIcon(site.id) +
+        '<h3>' + safe(info.name) + '</h3></div><div class="clinical-site-boon"><p title="' + safe(fullBoon) +
+        '">' + safe(compactBoons[boon] ?? fullBoon) + '</p></div></header>' +
         '<div class="grid portrait-slots" style="--site-columns:' + (capacity === 4 ? 4 : capacity / 2) + '">' + cells.join("") +
         '</div>' + tuckSpace + '</section>';
     }).join("") + '</div>';
@@ -456,6 +465,11 @@ function cardFace(card, id, effectiveCost) {
 }
 
 function options(p, objective = false) {
+  if (objective) return '<div class="objective-choices" style="--objective-count:' + p.choices.length + '">' + p.choices.map(id =>
+    '<article class="objective-choice' + (selected.has(id) ? ' picked' : '') + '">' +
+    objectivePreviewButton(id) + button(selected.has(id) ? "Selected" : "Select","option",
+      'data-id="' + safe(id) + '" aria-pressed="' + selected.has(id) + '"',
+      "choice-option" + (selected.has(id) ? " picked" : "")) + '</article>').join("") + '</div>';
   return '<div class="choices">' + p.choices.map((id) => {
     const g = objective ? data.goals[id] : null;
     const c = cardOf(id);
@@ -528,6 +542,28 @@ function renderPayment() {
 function zoomCard(id, action) {
   return '<button class="zoom-card" type="button" data-action="' + action + '" aria-label="' +
     safe("Return " + cardOf(id).name) + '">' + cardArt(id) + '</button>';
+}
+
+function objectivePreviewButton(id) {
+  return '<button type="button" class="objective-peek" data-action="previewObjective" data-id="' +
+    safe(id) + '" aria-label="Enlarge ' + safe(data.goals[id].name) + '" aria-haspopup="dialog">' +
+    objectiveFace(data.goals[id]) + '</button>';
+}
+
+function renderObjectivePreview() {
+  const allowed=[...game.offer,...game.goals,...(game.pending?.kind==="draft" ? game.pending.choices : [])];
+  if(!allowed.includes(objectivePreview))objectivePreview=null;
+  if(!objectivePreview)return "";
+  return '<dialog class="hand-preview image-preview objective-preview" aria-label="Enlarged objective">' +
+    '<button type="button" class="zoom-card" data-action="closeObjectivePreview" aria-label="Return objective">' +
+    objectiveFace(data.goals[objectivePreview]) + '</button></dialog>';
+}
+
+function closeObjectivePreview() {
+  const id=objectivePreview;
+  objectivePreview=null;
+  render();
+  app.querySelector('[data-action="previewObjective"][data-id="'+CSS.escape(id)+'"]')?.focus({preventScroll:true});
 }
 
 function renderHandPreview() {
@@ -647,7 +683,7 @@ function render() {
   const objectives = '<div class="panel detail match-objectives"><h2>Your objectives</h2>' +
     (game.goals.length ? '<div class="match-objective-cards">' + game.goals.map((id) => {
       const goal = data.goals[id], points = game.objectivePoints?.[id] ?? 0;
-      return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '">' + objectiveFace(goal) + '<p class="objective-status">' +
+      return '<article class="objective-card' + (points > 0 ? ' fulfilled' : '') + '">' + objectivePreviewButton(id) + '<p class="objective-status">' +
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
@@ -665,7 +701,7 @@ function render() {
     renderBoard() + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
       button("Close","panel",'data-id="' + sidePanel + '"') + (sidePanel === "objectives" ? objectives : discards) +
-      '</aside>' : '') + '</div>' + renderHandPreview() +
+      '</aside>' : '') + '</div>' + renderObjectivePreview() + renderHandPreview() +
     (inspect ? '<dialog class="hand-preview image-preview inspected-card-preview" aria-label="Card details">' +
       cardDetail() + '</dialog>' : '') + '</article>';
   mountUtility(app.querySelector(".utility-slot"), app.querySelector(".match-menu"));
@@ -691,7 +727,7 @@ function render() {
   }
   const preview = app.querySelector(".hand-preview");
   if (preview) {
-    const close = inspect ? closeCardPreview : closeHandPreview;
+    const close = objectivePreview ? closeObjectivePreview : inspect ? closeCardPreview : closeHandPreview;
     preview.addEventListener("cancel", event => { event.preventDefault(); close(); });
     preview.addEventListener("click", event => { if (event.target === preview) close(); });
     preview.showModal();
@@ -708,13 +744,14 @@ function firstGameControlAllowed(node) {
   if (firstGameStep === null) return true;
   const { action, id } = node.dataset;
   if (action === "exitFirstGame" || action === "toggleHand") return true;
+  if (objectivePreview) return action === "closeObjectivePreview";
   if (inspect) return action === "closeCardPreview";
   if (handPreview) return action === "closeHandPreview";
   const step = guide();
   if (!step) return guideTuckSeen ? action === "finishFirstGame" : action === "inspect" && id === "H19";
   if (step.type === "objectives") {
-    return action === "objective" ? selected.size === 2 :
-      action === "option" && (selected.size < 2 || selected.has(id));
+    return action === "previewObjective" || (action === "objective" ? selected.size === 2 :
+      action === "option" && (selected.size < 2 || selected.has(id)));
   }
   if (step.type !== "play") return action === step.type;
   if (!picked) return action === "previewHand" && id === step.card;
@@ -880,6 +917,12 @@ app.addEventListener("click", async (event) => {
   if (event.detail && performance.now() < suppressTapUntil && ["previewHand","place"].includes(node.dataset.action)) return;
   if (node.disabled || node.getAttribute("aria-disabled") === "true" || !firstGameControlAllowed(node)) return;
   const {action,id,site,slot} = node.dataset;
+  if (action === "previewObjective") {
+    const available=[...game.offer,...game.goals,...(game.pending?.kind==="draft" ? game.pending.choices : [])];
+    if(available.includes(id)) { objectivePreview=id;render(); }
+    return;
+  }
+  if (action === "closeObjectivePreview") {closeObjectivePreview();return;}
   if (action === "previewHand") { handPreview = id; render(); return; }
   if (action === "closeHandPreview") { closeHandPreview(); return; }
   if (action === "closeCardPreview") { closeCardPreview(); return; }
@@ -941,7 +984,7 @@ app.addEventListener("click", async (event) => {
   if (action === "startLocal" || action === "startSolo") {
     soloFaction = action === "startSolo" ? document.querySelector("#faction").value : null;
     soloDifficulty = soloFaction ? document.querySelector("#solo-difficulty").value : "normal";
-    localMatch = newGame();
+    localMatch = newGame(undefined,previousObjectiveOffers());
     localMatch.status = "objectives";
     revealed = null; error = ""; notice = "";
     seat = null;
