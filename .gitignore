@@ -4,3 +4,6 @@ dist/
 .netlify/
 .env
 .env.*
+*.jks
+*.keystore
+keystore.properties

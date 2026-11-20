@@ -1,0 +1,44 @@
+APP NAME
+Microbe Wars
+
+SHORT DESCRIPTION
+Lead Bacteria or Host in a tactical card battle. Play solo or pass and play.
+
+FULL DESCRIPTION
+Explore the microscopic world through a strategic card game where every play can change the battlefield.
+
+Choose your faction. Spread across clinical sites as Bacteria, or fight back with antibiotics and immune cells as Host. Build combinations, exploit site synergies and pursue secret objectives to finish with the most victory points.
+
+THREE ACTIONS. PLENTY OF POSSIBILITIES.
+Play a card, draw from your deck or recover the top card of your discard pile. Pay for stronger cards by discarding others from your hand. Decide what to deploy now and what to save for later.
+
+READ THE MATCH. PLAN YOUR RESPONSE.
+The Optimal, Active and Resistant strips show how antibiotics interact with bacteria. Tuck eligible opposing cards, protect your position and find the right moment to use your strongest abilities.
+
+PLAY YOUR WAY
+• Challenge the solo bot on Normal or Hard difficulty.
+• Share one device with a friend in Pass & Play.
+• Learn through the guided My First Game tutorial.
+• Explore illustrated cards in the library.
+• Consult the rules and glossary while learning.
+• Adjust text size, music and sound effects.
+• Play the bundled Android game offline without creating an account.
+
+Microbe Wars brings bacteria, antibiotics and immune responses into a playful science-fiction setting, with illustrated cards, a space soundtrack and ambient ship sounds.
+
+The game simplifies microbiology for entertainment and learning. Card interactions are game rules and should not guide diagnosis or treatment.
+
+INITIAL RELEASE NOTES
+Welcome to Microbe Wars. Choose Bacteria or Host, try the guided tutorial, challenge the solo bot or share a device in Pass & Play. Includes the illustrated card library, secret objectives, rules, glossary and space-themed audio.
+
+LISTING SETUP
+App type: Game
+Suggested category: Card
+Price: Free
+Contains ads: No for this build
+In-app purchases: None for this build
+App access: All Android gameplay is available without credentials
+Support email: Awaiting developer confirmation
+Privacy policy URL: Publish the bundled privacy.html at a public HTTPS URL, then paste that exact URL here
+Target audience and content rating: Developer must choose the intended ages and complete Google's questionnaire
+Native modes: Offline solo and same-device Pass & Play

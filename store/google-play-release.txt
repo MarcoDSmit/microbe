@@ -1,0 +1,53 @@
+MICROBE WARS GOOGLE PLAY RELEASE
+Prepared 20 November 2026
+
+CURRENT PACKAGE
+Application ID: com.marcodsmit.microbewars
+Version name: 1.0
+Version code: 1
+Target SDK: 36
+Source: MarcoDSmit/microbe on GitHub
+The release AAB prepared by Gradle is unsigned until you complete the signing step below. It cannot be uploaded to Play in that state.
+
+SIGN THE RELEASE
+1. Open this repository's android folder in Android Studio.
+2. Choose Build > Generate Signed Bundle / APK > Android App Bundle.
+3. Choose the app module. Create an upload keystore if you have none, or select your existing upload key.
+4. Save the keystore outside this repository. Keep its passwords and a backup in a secure place. Do not send passwords in chat or commit the keystore.
+5. Select release, then build. Android Studio shows the signed .aab location when finished.
+6. Upload that signed .aab to Play Console. Let Google Play App Signing manage the app signing key. Keep your upload key for future releases.
+The application ID becomes permanent when the app is registered. Each later upload needs a higher versionCode in android/app/build.gradle.
+
+REVIEW BEFORE PUBLIC SUBMISSION
+The captured Library and tutorial screens show card artwork with blank ability and synergy panels. The current UI places the corresponding rules text in screen-reader-only elements when artwork is present. Review the latest card export and restore visible ability and synergy text before public submission. The included files are a release preparation and testing pack.
+
+CREATE THE PLAY CONSOLE APP
+1. Create app. Use Microbe Wars, English, Game and Free.
+2. Complete account identity and device verification if Console requests them.
+3. Add the support email, store copy and images from this release pack.
+4. Host public/privacy.html on a public HTTPS page. Verify it opens without a login. Add the URL to Console. It is also available offline from the app menu.
+5. Complete App content, including Ads, App access, Data safety, Target audience, Content rating and the Health apps declaration. Use the disclosure notes below and review the final answers yourself.
+6. Start an internal test and add friends' Google account addresses. Upload the signed .aab and share the tester opt-in link once Console makes it available. Testers must use an invited Google account.
+7. If this is a Personal account created after 13 November 2023, complete a closed test with at least 12 testers continuously opted in for 14 days, then apply for production access. Internal testing does not satisfy that requirement.
+8. Submit the free production release once Console permits it and testing is complete.
+
+DATA AND ACCESS NOTES
+The Android build runs locally. It contains no advertising, analytics, login, automatic replay upload or automatic training upload. Saved matches, card-library progress and preferences use app storage. Android backup/device transfer can include app data according to the user's settings.
+Review Data safety against the final artifact and Google's definitions. Current offline gameplay has no developer-operated collection or sharing. Optional external GitHub bug reports are public and handled by GitHub. The separately hosted online web game has server-side room storage and is outside the native offline modes.
+Do not claim mobile online matchmaking in the store listing. The native build currently exposes Solo and Pass & Play.
+Microbiology is represented through simplified game mechanics. Complete the Health apps declaration accurately for the educational content. The app does not diagnose, treat, connect to health records or collect health data.
+
+ART AND AUDIO
+The promotional compositions reuse the existing shield, wordmark and space artwork. Screenshots are captured from the actual bundled mobile web UI at phone dimensions, without device chrome. They still need a check against the installed release on your phone.
+Review the existing card-art-credits.html and original image licences before public distribution. A source link alone does not establish reuse permission. Check any attribution or ShareAlike requirements and the licensing terms of your supplied audio.
+
+FUTURE ADVERTISING
+Keep this release marked as containing no ads. Adding ads later requires a new release and updated privacy policy, Data safety, Ads declaration and any applicable consent flows.
+
+OFFICIAL REFERENCES
+Signing: https://developer.android.com/studio/publish/app-signing
+Testing: https://support.google.com/googleplay/android-developer/answer/14151465
+Store assets: https://support.google.com/googleplay/android-developer/answer/9866151
+App content and privacy: https://support.google.com/googleplay/android-developer/answer/9859455
+Target SDK: https://support.google.com/googleplay/android-developer/answer/11926878
+Health declaration: https://support.google.com/googleplay/android-developer/answer/14738291
