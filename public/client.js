@@ -66,7 +66,7 @@ let picked = null, payment = new Set(), selected = new Set(), inspect = null;
 let paymentMode = false, refreshing = false;
 let sidePanel = null, dragged = null, dropSpace = null;
 let objectivePreview = null;
-let handPreview = null, focusedSite = null, boardOverview = false;
+let handPreview = null, focusedSite = null;
 let localMatch = null, revealed = null;
 let firstGameStep = null, guideTuckSeen = false;
 const guide = () => firstGameStep === null ? null : firstGameSteps[firstGameStep];
@@ -264,7 +264,6 @@ function move(action) {
       firstGameStep++;
       if (guide()?.site) {
         focusedSite = guide().site;
-        boardOverview = false;
       }
     } else saveLocal();
     syncLocal();
@@ -398,15 +397,14 @@ function renderBoard() {
   if (!game.board.some(site => site.id === focusedSite)) focusedSite = game.board[0]?.id;
   const siteButtons = game.board.map(({id}) =>
     '<button data-action="siteView" data-id="' + safe(id) + '" aria-label="' + safe(siteName(id)) +
-    '" title="' + safe(siteName(id)) + '" aria-pressed="' + (!boardOverview && focusedSite === id) +
+    '" title="' + safe(siteName(id)) + '" aria-pressed="' + (focusedSite === id) +
     '">' + clinicalIcon(id) + '</button>').join("");
-  const navigation = '<nav class="site-navigation" aria-label="Site views">' + siteButtons +
-    button("Overview", "siteView", 'data-id="overview" aria-pressed="' + boardOverview + '"') + '</nav>';
+  const navigation = '<nav class="site-navigation" aria-label="Site views">' + siteButtons + '</nav>';
   const available = game.legal[picked];
   const ready = available && payment.size === available.cost && !busy;
   const capacity = game.siteCapacity ?? 6;
   return navigation +
-    '<div class="board board-' + (boardOverview ? "overview" : "focus") + '" aria-label="Infection sites" tabindex="0">' +
+    '<div class="board board-focus" aria-label="Infection sites" tabindex="0">' +
     game.board.filter(site => firstGameStep === null || site.id === focusedSite).map(site => {
       const info = data.sites.find(s => s.id === site.id);
       const cells = site.slots.slice(0, capacity).map((piece, i) => {
@@ -516,8 +514,12 @@ function decision() {
   if (p.kind === "attack") return tuckDecision(p);
   if (p.kind === "bonus") {
     if (guide()) return "";
-    return '<div class="panel choice bonus-choice"><h2>Bonus play</h2><p>Select a legal card from your hand, or skip this bonus.</p>' +
-      button("Skip bonus","skipBonus",busy ? "disabled" : "") + '</div>';
+    const key = JSON.stringify([game.turnNumber, p]);
+    const previous = app.querySelector("details.bonus-choice");
+    return '<details class="bonus-choice" data-bonus-key="' + safe(key) + '"' +
+      (previous?.dataset.bonusKey === key && previous.open ? ' open' : '') +
+      '><summary>Bonus play available</summary><div class="bonus-content"><p>Select a legal card from your hand, or skip this bonus.</p>' +
+      '<button type="button" class="secondary" data-action="skipBonus"' + (busy ? ' disabled' : '') + '>Skip bonus</button></div></details>';
   }
   if (p.kind === "refuge") {
     return '<div class="panel choice"><h2>Refuge</h2><p>' + safe(p.prompt) + '</p>' +
@@ -710,6 +712,8 @@ function render() {
     }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const choosingTuck = game.pending?.kind === "attack";
+  const bonusPlay = game.pending?.kind === "bonus" && game.pending.f === game.faction;
+  const currentDecision = decision();
   if (choosingTuck) { handPreview = null; inspect = null; objectivePreview = null; }
   const previousBoard = app.querySelector(".board-focus");
   const boardScroll = previousBoard && previousBoard.dataset.guideStep === String(firstGameStep) ? previousBoard.scrollTop : null;
@@ -721,8 +725,8 @@ function render() {
     (!guided && game.status === "playing" ? ' compact-match' : '') +
     (handExpanded ? ' hand-expanded' : '') + '">' +
     (guided || game.status !== "playing" ? summary : "") + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
-    invite + renderScore() + (choosingTuck ? "" : decision()) + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content' + (choosingTuck ? ' choosing-tuck' : '') + '">' +
-    (choosingTuck ? decision() : renderBoard()) + '</div><div class="hand-dock">' + renderPublicPoints(status) +
+    invite + renderScore() + (choosingTuck || bonusPlay ? "" : currentDecision) + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content' + (choosingTuck ? ' choosing-tuck' : '') + '">' +
+    (choosingTuck ? currentDecision : (bonusPlay ? currentDecision : "") + renderBoard()) + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
       button("Close","panel",'data-id="' + sidePanel + '"') + (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderObjectivePreview() + renderHandPreview() +
@@ -952,15 +956,11 @@ app.addEventListener("click", async (event) => {
   if (action === "closeCardPreview") { closeCardPreview(); return; }
   if (action === "payHand") { togglePayment(id); return; }
   if (action === "siteView") {
-    const wasOverview = boardOverview;
-    boardOverview = id === "overview";
-    if (!boardOverview) focusedSite = id;
-    if (wasOverview !== boardOverview) render();
-    if (!boardOverview) {
-      const board = app.querySelector(".board-focus");
-      const target = board?.querySelector('[data-board-site="' + CSS.escape(id) + '"]');
-      if (target) board.scrollTo({top:target.offsetTop,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
-    }
+    if (!game.board.some(site => site.id === id)) return;
+    focusedSite = id;
+    const board = app.querySelector(".board-focus");
+    const target = board?.querySelector('[data-board-site="' + CSS.escape(id) + '"]');
+    if (target) board.scrollTo({top:target.offsetTop,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
     return;
   }
   if (action === "exportReplay") {
@@ -1098,7 +1098,6 @@ function startFirstGame() {
   soloFaction = seat = null;
   error = notice = "";
   localMatch = createFirstGame(newGame, data);
-  boardOverview = false;
   focusedSite = localMatch.board[0].id;
   history.replaceState(null,"","/#first-game");
   syncLocal();

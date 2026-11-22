@@ -92,10 +92,6 @@
 .board-focus .node{min-height:100%;scroll-snap-align:start;margin-bottom:.4rem}
 .board-focus .node:last-child{margin-bottom:0}
 .board-focus .grid{grid-template-columns:repeat(6,minmax(0,1fr))}
-.board-overview{grid-template-columns:repeat(2,minmax(0,1fr))}
-.board-overview .node{padding:.55rem}
-.board-overview .grid .slot{min-height:2.7rem;font-size:.75rem}
-.board-overview .grid .slot .board-card-art{max-height:3.5rem;width:auto;max-width:100%}
 .hand-dock{min-width:0;display:grid;gap:.3rem;background:var(--paper);padding-top:.3rem}
 .turn-status{font-size:.85rem}
 .hand-dock .public-points{padding:.25rem .55rem}
@@ -202,10 +198,6 @@ button.art-button:active:not(:disabled) {filter:brightness(.9)}
   .mobile-build .board .node>details {margin-top:.2rem;padding-top:.15rem;font-size:.72rem}
   .mobile-build .board-focus .grid .slot {min-height:clamp(2.15rem,11dvh,4.6rem)}
   .mobile-build .board-focus .grid .board-card-art {max-height:clamp(2rem,11dvh,4.6rem)}
-  .mobile-build .board-overview {grid-template-columns:repeat(4,minmax(0,1fr));gap:.25rem}
-  .mobile-build .board-overview .grid {gap:.15rem}
-  .mobile-build .board-overview .grid .slot {min-height:1.45rem;padding:.1rem}
-  .mobile-build .board-overview .grid .board-card-art {max-height:clamp(1.3rem,6dvh,2.6rem)}
   .mobile-build .hand-dock {gap:.18rem;padding:0}
   .mobile-build .turn-status {font-size:.75rem;line-height:1.15}
   .mobile-build .discard-summary,.mobile-build .board-points-label,.mobile-build .public-points small {display:none}
@@ -232,9 +224,6 @@ button.art-button:active:not(:disabled) {filter:brightness(.9)}
     max-height:calc(100% - 2.4rem);overflow:auto;overscroll-behavior:contain;
   }
   .mobile-build .match-screen > .choice {padding:.45rem;gap:.25rem;box-shadow:0 .5rem 1.5rem #0005}
-  .mobile-build .match-screen > .bonus-choice {inset:4.6rem .55rem auto auto;max-width:48%;z-index:2}
-  .mobile-build .match-screen > .bonus-choice h2 {font-size:.95rem}
-  .mobile-build .match-screen > .bonus-choice p {display:none}
   .mobile-build .match-screen .choice .card-art {max-height:38dvh;width:auto;margin:auto}
   .mobile-build .match-screen .choice :is(.goal-choice,.choice-card) {width:auto;max-width:100%}
   .mobile-build .match-screen .layout>.aside {top:.15rem;max-height:calc(100% - .3rem)}
@@ -418,7 +407,6 @@ body:has(.lunar-lobby) :is(.brand,.utility) {color:#eff7ff}
   align-self:end;margin:.12rem .5rem 0;padding:.14rem .25rem;
   background:#07141de8;font-size:.73rem;line-height:1.13
 }
-.board-overview .site-face {width:100%;aspect-ratio:auto;min-height:4.2rem}
 .hand-dock .hand-panel {padding:0}
 .hand-card[data-drag-card] {touch-action:none}
 .hand-peek .card-art {user-select:none}
@@ -451,14 +439,12 @@ body:has(.lunar-lobby) .masthead :is(.reference-menu,.settings) .panel {color:va
   .mobile-build .board-focus .site-trays {width:min(100%,180cqh,34rem)}
   .board .site-live {margin-top:.14rem;font-size:.64rem;padding:.1rem}
   .board .site-boon {font-size:.6rem;padding:.1rem .2rem;margin-top:.05rem}
-  .board-overview .site-live {font-size:.6rem}
   .mobile-build .hand-dock .hand-panel {padding:0}
   .mobile-build .hand-dock .hand {--peek-height:clamp(3rem,20dvh,6rem)}
   body:has(.lunar-lobby) .masthead .utility {width:max(16rem,34%)}
 }
 @media (orientation:portrait) and (max-width:680px) {
   body:has(.lunar-lobby) .masthead .utility {width:100%}
-  .board-overview .site-trays {grid-template-columns:minmax(0,1fr)}
 }
 
 @media (orientation:landscape) and (max-height:335px) {
@@ -615,9 +601,7 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 .board .portrait-slots .slot.legal {outline:1px solid #6ce8d3;outline-offset:-2px}
 .board .portrait-slots .board-card-art {width:100%;height:100%;max-height:none;object-fit:contain}
 .tuck-vp {position:absolute;bottom:7%;inset-inline:8%;background:#08141def;border:1px solid #587889;border-radius:.25rem;padding:.14em;color:#fff;font-size:clamp(.58rem,2.7vw,.86rem);line-height:1.16;text-align:center}
-.board-overview .portrait-slots {grid-template-columns:repeat(4,minmax(0,1fr));gap:.17rem}
 @media (orientation:portrait) {
-  .match-screen .board-overview {grid-template-columns:minmax(0,1fr)}
   .match-screen .board-focus {container-type:size}
   .match-screen.compact-match:not(.hand-expanded) .board-focus {height:100%}
   .match-screen.compact-match.hand-expanded .board-focus {height:100%}
@@ -643,6 +627,12 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 .objective-choice > .choice-option {width:100%;text-align:center;min-height:2rem}
 .objective-choice.picked .objective-peek {outline:2px solid #70e8d0;outline-offset:2px;border-radius:.3rem}
 .objective-peek:hover {filter:brightness(1.08)}
+.match-screen .board-content:has(> .bonus-choice) {grid-template-rows:auto auto minmax(0,1fr)}
+.bonus-choice {position:static;min-width:0;border:1px solid var(--line);border-radius:.35rem;padding:.2rem .45rem;background:var(--card);color:var(--ink);font-size:.8rem}
+.bonus-choice summary {cursor:pointer;font-weight:700;min-height:1.6rem;align-content:center}
+.bonus-content {display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding-top:.2rem}
+.bonus-content p {font-size:.75rem;line-height:1.2}
+.bonus-content button {flex:none;padding:.3rem .5rem;min-height:2rem;font-size:.75rem}
 .match-screen .board-content.choosing-tuck {display:block;min-height:0;overflow:hidden}
 .tuck-choice {height:100%;min-height:0;max-height:100%;grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden;padding:.45rem;gap:.3rem}
 .tuck-choice h2 {font-size:1.1rem}
