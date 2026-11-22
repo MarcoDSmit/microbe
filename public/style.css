@@ -643,6 +643,18 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 .objective-choice > .choice-option {width:100%;text-align:center;min-height:2rem}
 .objective-choice.picked .objective-peek {outline:2px solid #70e8d0;outline-offset:2px;border-radius:.3rem}
 .objective-peek:hover {filter:brightness(1.08)}
+.match-screen .board-content.choosing-tuck {display:block;min-height:0;overflow:hidden}
+.tuck-choice {height:100%;min-height:0;max-height:100%;grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden;padding:.45rem;gap:.3rem}
+.tuck-choice h2 {font-size:1.1rem}
+.tuck-choice p {font-size:.85rem}
+.tuck-targets {display:flex;flex-wrap:nowrap;align-items:stretch;gap:.6rem;min-height:0;overflow:auto;overscroll-behavior:contain;padding:.2rem}
+.tuck-target {flex:0 0 clamp(6rem,29vw,13rem);min-width:0;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto;gap:.3rem}
+.tuck-target:has(small) {grid-template-rows:minmax(0,1fr) auto auto}
+.tuck-target-card {display:flex;flex-direction:column;align-items:center;gap:.25rem;min-height:0;overflow:auto;padding:0;border:2px solid transparent;border-radius:.35rem;background:transparent}
+.match-screen .tuck-choice .tuck-target-card .card-art {display:block;width:100%;height:100%;max-height:100%;min-height:0;object-fit:contain;margin:0;flex-shrink:0}
+.tuck-target .choice-option {width:100%;text-align:center;min-height:2rem}
+.tuck-choice-actions {display:flex;gap:.4rem;flex-wrap:wrap}
+.tuck-choice-actions > button {flex:1;min-width:7rem}
 @media (orientation:portrait) {
   body:has(.compact-match) {height:100dvh;overflow:hidden}
   #app:has(.compact-match) {height:100%;min-height:0}

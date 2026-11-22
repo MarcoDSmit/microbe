@@ -483,6 +483,27 @@ function options(p, objective = false) {
         (game.actionRules ? '<span class="sr-only">' + safe(copyLabel(id)) + '</span>' : '') : safe(name)) + (targetSite ? '<small>' + safe(siteName(targetSite.id)) + '</small>' : "") + '</button>';
   }).join("") + '</div>';
 }
+function tuckDecision(p) {
+  const allAllowed = !p.localSweep && p.max > 1 && p.choices.length <= p.max;
+  const sweepAllowed = p.localSweep?.length > 1 && p.job.mode === "sweep";
+  const choiceKey = [game.faction, game.turnNumber, p.kind, ...p.choices].join(",");
+  const targets = p.choices.map(id => {
+    const ids = id === "local" ? p.localSweep : [id];
+    const cards = ids.map(target => '<img class="card-art" src="' + cardArtUrl(target) +
+      '" alt="' + safe(cardOf(target).name) + '">').join("");
+    return '<article class="tuck-target' + (selected.has(id) ? ' picked' : '') + '">' +
+      '<button type="button" class="tuck-target-card" data-action="option" data-id="' + safe(id) +
+      '" aria-pressed="' + selected.has(id) + '" aria-label="' + safe(id === "local" ? "Choose local targets" : cardOf(id).name) + '">' + cards + '</button>' +
+      (id === "local" ? '<small>' + (p.job.mode === "sweep" ? "All local targets" : "Choose local targets") + '</small>' : '') +
+      button(selected.has(id) ? "Selected" : "Select", "option", 'data-id="' + safe(id) + '" aria-pressed="' + selected.has(id) + '"', "choice-option") + '</article>';
+  }).join("");
+  return '<section class="panel choice tuck-choice" data-choice-key="' + safe(choiceKey) + '" aria-label="Choose tuck targets">' +
+    '<h2>Choose tuck targets</h2><p>' + safe(p.prompt) + '</p><div class="tuck-targets">' + targets + '</div>' +
+    '<div class="tuck-choice-actions"><button type="button" class="primary" data-action="choose"' +
+    (selected.size < p.min || selected.size > p.max || busy ? ' disabled' : '') + '>Confirm choice</button>' +
+    (p.max > 1 || sweepAllowed ? button("Tuck all eligible", "tuckAll", busy || !(allAllowed || sweepAllowed) ? 'disabled title="Choose up to ' + p.max + ' targets"' : "") : "") +
+    '</div></section>';
+}
 function decision() {
   if (game.status === "objectives") {
     if (!game.offer?.length) return '<div class="panel choice"><h2>Objectives locked</h2><p>Waiting for the other player to choose.</p></div>';
@@ -492,6 +513,7 @@ function decision() {
   const p = game.pending;
   if (!p) return "";
   if (p.f !== game.faction) return '<div class="panel choice"><h2>Awaiting response</h2><p>' + safe(p.prompt) + '</p></div>';
+  if (p.kind === "attack") return tuckDecision(p);
   if (p.kind === "bonus") {
     if (guide()) return "";
     return '<div class="panel choice bonus-choice"><h2>Bonus play</h2><p>Select a legal card from your hand, or skip this bonus.</p>' +
@@ -526,7 +548,7 @@ function renderHand() {
         (!paymentMode && game.legal[id] && !busy ? ' draggable="true" data-drag-card="' + safe(id) + '"' : "") + '>' +
         '<button type="button" class="hand-peek" data-action="' + (canPay ? "payHand" : "previewHand") +
         '" data-id="' + safe(id) + '" aria-label="' + safe(label) + '" title="' + safe(label) + '"' +
-        (canPay ? ' aria-pressed="' + paying + '"' : ' aria-haspopup="dialog"') + '>' +
+        (canPay ? ' aria-pressed="' + paying + '"' : ' aria-haspopup="dialog"' + (game.pending?.kind === "attack" ? ' disabled' : '')) + '>' +
         cardArt(id) + '<span class="hand-caption"><b>' + safe(card.name.split(" — ")[0]) +
         '</b><span aria-hidden="true">' + (game.legal[id]?.cost ?? card.cost) + '</span></span></button></article>';
     }).join("") + '</div></section>';
@@ -687,6 +709,8 @@ function render() {
         (goal.per ? points + ' VP currently' : points > 0 ? 'Condition met' : 'Condition open') + '</p></article>';
     }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
+  const choosingTuck = game.pending?.kind === "attack";
+  if (choosingTuck) { handPreview = null; inspect = null; objectivePreview = null; }
   const previousBoard = app.querySelector(".board-focus");
   const boardScroll = previousBoard && previousBoard.dataset.guideStep === String(firstGameStep) ? previousBoard.scrollTop : null;
   const focused = document.activeElement?.dataset;
@@ -697,8 +721,8 @@ function render() {
     (!guided && game.status === "playing" ? ' compact-match' : '') +
     (handExpanded ? ' hand-expanded' : '') + '">' +
     (guided || game.status !== "playing" ? summary : "") + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
-    invite + renderScore() + decision() + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
-    renderBoard() + '</div><div class="hand-dock">' + renderPublicPoints(status) +
+    invite + renderScore() + (choosingTuck ? "" : decision()) + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content' + (choosingTuck ? ' choosing-tuck' : '') + '">' +
+    (choosingTuck ? decision() : renderBoard()) + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
       button("Close","panel",'data-id="' + sidePanel + '"') + (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderObjectivePreview() + renderHandPreview() +
@@ -1033,6 +1057,13 @@ app.addEventListener("click", async (event) => {
   if (action === "choose") {
     if (game.pending?.kind === "attack" && !selected.size && !confirm("Skip this tuck without choosing a target?")) return;
     return move({ type:"choose", selected:[...selected] });
+  }
+  if (action === "tuckAll") {
+    const p = game.pending;
+    if (p?.kind !== "attack" || p.f !== game.faction) return;
+    if (p.localSweep?.length > 1 && p.job.mode === "sweep") return move({type:"choose", selected:["local"]});
+    if (!p.localSweep && p.max > 1 && p.choices.length <= p.max) return move({type:"choose", selected:[...p.choices]});
+    return;
   }
   if (action === "refugeDecline") return move({ type:"refuge" });
   if (action === "refugeMove") return move({ type:"refuge",
