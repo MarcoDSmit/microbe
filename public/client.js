@@ -503,6 +503,17 @@ function tuckDecision(p) {
     '</div></section>';
 }
 function decision() {
+  const content = decisionContent();
+  if (!content || game.pending?.kind === "bonus") return content;
+  const title = content.match(/<h2>(.*?)<\/h2>/)?.[1] ?? "Resolve a choice";
+  const key = JSON.stringify([game.faction, game.turnNumber, game.status, game.pending, game.offer]);
+  const previous = app.querySelector("details.decision-panel");
+  const open = previous?.dataset.decisionKey === key ? previous.open : true;
+  return '<details class="decision-panel" data-decision-key="' + safe(key) + '"' + (open ? ' open' : '') +
+    '><summary>' + title + '</summary><div class="decision-content">' +
+    content.replace(/<h2>.*?<\/h2>/, "") + '</div></details>';
+}
+function decisionContent() {
   if (game.status === "objectives") {
     if (!game.offer?.length) return '<div class="panel choice"><h2>Objectives locked</h2><p>Waiting for the other player to choose.</p></div>';
     return '<div class="panel choice"><h2>Keep two secret objectives</h2>' + (guide() ? '<p>' + safe(guide().hint) + '</p>' : "") + options({choices:game.offer}, true) +
@@ -533,7 +544,8 @@ function decision() {
     '<article class="choice-card panel ' + cardOf(id).faction.toLowerCase() + '">' +
     cardFace(cardOf(id), id) + '</article>').join("") + '</div>' : "";
   const choiceKey = [game.faction, game.turnNumber, p.kind, ...(p.choices ?? [])].join(",");
-  return '<div class="panel choice" data-choice-key="' + safe(choiceKey) + '"><h2>Resolve a choice</h2><p>' + safe(p.prompt) + '</p>' +
+  const titles = {trim:"Discard to hand limit", filter:"Choose cards to keep", retrieve:"Retrieve a card", draft:"Choose an objective", recirculate:"Heart: exchange cards", tradeDraw:"Middle Ear: discard and draw", relocate:"Move a card", survey:"Choose the top card", discardDraw:"Choose a discard or draw", resistPlay:"Choose a resistant card"};
+  return '<div class="panel choice" data-choice-key="' + safe(choiceKey) + '"><h2>' + (titles[p.kind] ?? "Resolve a choice") + '</h2><p>' + safe(p.prompt) + '</p>' +
     preview + options(p, p.kind === "draft") + button(skipBoon ? "Skip boon" : skipTuck ? "Skip tuck" : "Confirm choice","choose",
       selected.size < p.min || selected.size > p.max || busy ? "disabled" : "","primary") + '</div>';
 }
@@ -701,9 +713,9 @@ function render() {
     (localMatch && !soloFaction ? button("Hide hand","hideLocal","","plain") : "") +
     button(localMatch ? "Leave match" : "Leave this tab","leave","","plain") +
     '</div></details><div class="utility-slot match-settings"></div>';
-  const invite = waiting && inv ? '<div class="panel choice"><h2>Invite the other player</h2><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
+  const invite = waiting && inv ? '<details class="decision-panel invite-panel"' + (app.querySelector('.invite-panel')?.open === false ? '' : ' open') + '><summary>Invite the other player</summary><div class="decision-content panel"><p>Share this single-use room link with your opponent. It gives them the second seat in this match.</p>' +
     '<div class="invite-row"><input id="invite" aria-label="Match invite link" readonly value="' + safe(inv) + '">' +
-    button("Copy link","copy") + '</div></div>' : "";
+    button("Copy link","copy") + '</div></div></details>' : "";
   const objectives = '<div class="panel detail match-objectives"><h2>Your objectives</h2>' +
     (game.goals.length ? '<div class="match-objective-cards">' + game.goals.map((id) => {
       const goal = data.goals[id], points = game.objectivePoints?.[id] ?? 0;
@@ -712,7 +724,6 @@ function render() {
     }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const choosingTuck = game.pending?.kind === "attack";
-  const bonusPlay = game.pending?.kind === "bonus" && game.pending.f === game.faction;
   const currentDecision = decision();
   if (choosingTuck) { handPreview = null; inspect = null; objectivePreview = null; }
   const previousBoard = app.querySelector(".board-focus");
@@ -725,8 +736,8 @@ function render() {
     (!guided && game.status === "playing" ? ' compact-match' : '') +
     (handExpanded ? ' hand-expanded' : '') + '">' +
     (guided || game.status !== "playing" ? summary : "") + err() + (notice ? '<p class="notice" role="status">' + safe(notice) + '</p>' : "") +
-    invite + renderScore() + (choosingTuck || bonusPlay ? "" : currentDecision) + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content' + (choosingTuck ? ' choosing-tuck' : '') + '">' +
-    (choosingTuck ? currentDecision : (bonusPlay ? currentDecision : "") + renderBoard()) + '</div><div class="hand-dock">' + renderPublicPoints(status) +
+    renderScore() + (guided ? "" : matchMenu) + '<div class="layout' + (sidePanel ? ' panel-open' : '') + '"><section class="tabletop"><div class="board-content">' +
+    invite + currentDecision + renderBoard() + '</div><div class="hand-dock">' + renderPublicPoints(status) +
     '<div class="hand-and-controls">' + renderHand() + turnControls + '</div></div></section>' + (sidePanel ? '<aside class="aside">' +
       button("Close","panel",'data-id="' + sidePanel + '"') + (sidePanel === "objectives" ? objectives : discards) +
       '</aside>' : '') + '</div>' + renderObjectivePreview() + renderHandPreview() +

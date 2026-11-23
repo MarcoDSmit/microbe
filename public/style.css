@@ -679,3 +679,16 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 @media (orientation:portrait) {
   .compact-match .board-points-label {display:none}
 }
+
+/* Every match decision stays inside the board area and can reveal the sites. */
+.decision-panel {min-width:0;min-height:0;border:1px solid var(--line);border-radius:.4rem;background:var(--card);color:var(--ink);overflow:hidden}
+.decision-panel > summary {cursor:pointer;font-weight:700;padding:.4rem .6rem;min-height:2rem}
+.decision-panel > summary::after {content:' · Expand';font-size:.75rem;font-weight:400}
+.decision-panel[open] > summary::after {content:' · Collapse'}
+.decision-panel[open] {display:flex;flex-direction:column;height:100%;overflow:hidden}
+.decision-content {min-height:0;overflow:auto;flex:1}
+.decision-content > .choice {border:0;border-radius:0;min-height:0;max-height:100%;overflow:auto}
+.decision-content > .tuck-choice {height:100%}
+.match-screen .board-content:has(> .decision-panel) {grid-template-rows:auto auto minmax(0,1fr)}
+.match-screen .board-content:has(> .decision-panel[open]) {display:block;overflow:hidden}
+.match-screen .board-content:has(> .decision-panel[open]) > :is(.site-navigation,.board-focus) {display:none}
