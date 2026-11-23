@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import data from "../worker/data.json" with { type: "json" };
-import { act, matchReplay, newGame, score, view } from "../worker/game.js";
+import { act, matchReplay, newGame, score, view, objectiveEligible } from "../worker/game.js";
 import { api } from "../worker/api.js";
 import { createFirstGame, firstGameAllows, firstGameSteps } from "../public/first-game.js";
 import { nextPlayer, passPlayView } from "../public/pass-play.js";
@@ -10,6 +10,28 @@ import { chooseHardMove } from "../public/trained-bot.js";
 
 const piece = (id) => ({id,tucked:[],guardUsed:false,refugeUsed:0});
 const random = () => 0.19;
+// Site-dependent objectives must be valid in opening offers and later drafts.
+for (let seed = 1; seed <= 2000; seed++) {
+  let r = seed;
+  const state = newGame(() => ((r = (Math.imul(r,1664525)+1013904223) >>> 0) / 4294967296));
+  for (const f of ['Bacteria','Host']) {
+    assert.equal(state.players[f].offer.length,3);
+    for (const id of [...state.players[f].offer,...state.players[f].goalDeck]) assert.ok(objectiveEligible(state,id));
+    if (!state.board.some(site => site.id === 'N05')) assert.ok(!state.players[f].offer.includes('G20'));
+  }
+}
+const legacyObjectives = newGame(random);
+legacyObjectives.board = ['N01','N02','N03','N04'].map(id => ({id,slots:Array(4).fill(null)}));
+legacyObjectives.status = 'objectives';
+legacyObjectives.players.Bacteria.offer = ['G20','G21','G01'];
+legacyObjectives.players.Bacteria.goalDeck.push('G20','G21');
+const repairedOffer = view(legacyObjectives,'Bacteria').offer;
+assert.equal(repairedOffer.length,3);
+assert.ok(repairedOffer.every(id => objectiveEligible(legacyObjectives,id)));
+legacyObjectives.status = 'playing';
+legacyObjectives.pending = {kind:'draft',f:'Bacteria',choices:['G20','G01'],min:1,max:1,prompt:'Choose an objective.'};
+assert.ok(view(legacyObjectives,'Bacteria').pending.choices.every(id => objectiveEligible(legacyObjectives,id)));
+assert.equal(legacyObjectives.pending.choices.length,2);
 const deckSize = faction => Object.values(data.cards).filter(card => card.faction === faction)
   .reduce((sum,card) => sum + (card.copies ?? 2),0);
 const db = new Map();

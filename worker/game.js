@@ -69,15 +69,49 @@ function objectiveRandom(s) {
   return s.objectiveRandomState / 4294967296;
 }
 
+export function objectiveEligible(s, id) {
+  const goal = goals[id];
+  return !!goal && (goal.requiresSites ?? []).every(id => s.board.some(site => site.id === id)) &&
+    (!['G03','G04','G15'].includes(id) || capacity(s) >= (id === 'G15' ? 4 : 3));
+}
+
+// Repair unchosen pools in older saves as well as filtering newly drawn objectives.
+function refreshObjectives(s, f) {
+  const player = s.players[f];
+  player.goalDeck = player.goalDeck.filter(id => objectiveEligible(s, id));
+  const draft = s.pending?.kind === 'draft' && s.pending.f === f ? s.pending : null;
+  if (draft && draft.choices.some(id => !objectiveEligible(s,id))) {
+    const count = draft.choices.length;
+    draft.choices = draft.choices.filter(id => objectiveEligible(s,id));
+    for (const id of Object.keys(goals)) {
+      if (draft.choices.length >= count) break;
+      if (goals[id].faction === f && objectiveEligible(s,id) && !player.goals.includes(id) &&
+          !draft.choices.includes(id)) {
+        draft.choices.push(id);
+        player.goalDeck = player.goalDeck.filter(other => other !== id);
+      }
+    }
+  }
+  if (s.status === 'objectives' && player.offer.length) {
+    player.offer = player.offer.filter(id => objectiveEligible(s, id));
+    const available = Object.keys(goals).filter(id => goals[id].faction === f && objectiveEligible(s,id) &&
+      !player.offer.includes(id) && !player.goals.includes(id));
+    for (const id of available) {
+      if (player.offer.length >= 3) break;
+      player.offer.push(id);
+      player.goalDeck = player.goalDeck.filter(other => other !== id);
+    }
+  }
+}
+
 export function newGame(random = secureRandom, previousOffers = {}) {
   const players = {};
   const board = shuffle(sites, random).slice(0, 4).map(({id}) => ({ id, slots: Array(4).fill(null) }));
-  const activeSites = new Set(board.map(site => site.id));
   for (const f of sides) {
     const deck = shuffle(Object.keys(catalog).filter((id) => catalog[id].faction === f)
       .flatMap((id) => [id, id + ":2"].slice(0, catalog[id].copies ?? 2)), random);
     const goalDeck = shuffledObjectives(Object.keys(goals).filter((id) => goals[id].faction === f &&
-      (goals[id].requiresSites ?? []).every(site => activeSites.has(site))), random, previousOffers[f]);
+      objectiveEligible({board, siteCapacity:4}, id)), random, previousOffers[f]);
     players[f] = { deck, hand: deck.splice(0, 6), discard: [], goalDeck, goals: [],
       offer: goalDeck.splice(0, 3), goalDiscard:[], turns: 0 };
   }
@@ -269,6 +303,7 @@ function pump(s) {
       }
       case "draft": {
         const player = s.players[job.f];
+        refreshObjectives(s, job.f);
         player.goalDeck = shuffle(player.goalDeck, () => objectiveRandom(s));
         const choices = player.goalDeck.splice(0, job.count);
         if (choices.length === 1) s.players[job.f].goals.push(choices[0]);
@@ -526,6 +561,7 @@ function applyAction(s, f, action) {
   }
   requireRule(s.status === "playing" || s.status === "objectives", "The match is not ready for a move.");
   const player = s.players[f];
+  refreshObjectives(s, f);
   if (s.status === "objectives") {
     requireRule(action.type === "objectives" && player.offer?.length, "Waiting for the other player.");
     choices({ choices: player.offer, min: 2, max: 2 }, action.selected);
@@ -724,6 +760,7 @@ function liveSitePoints(s) {
 }
 
 export function view(s, f) {
+  refreshObjectives(s, f);
   const player = s.players[f], rival = s.players[opposite(f)];
   const pending = s.pending?.f === f ? s.pending : s.pending ? { f: s.pending.f, prompt: "Waiting for the other player’s choice." } : null;
   const bonus = pending?.kind === "bonus" ? pending : null;
