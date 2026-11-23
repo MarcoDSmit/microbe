@@ -496,11 +496,10 @@ function tuckDecision(p) {
       button(selected.has(id) ? "Selected" : "Select", "option", 'data-id="' + safe(id) + '" aria-pressed="' + selected.has(id) + '"', "choice-option") + '</article>';
   }).join("");
   return '<section class="panel choice tuck-choice" data-choice-key="' + safe(choiceKey) + '" aria-label="Choose tuck targets">' +
-    '<h2>Choose tuck targets</h2><p>' + safe(p.prompt) + '</p><div class="tuck-targets">' + targets + '</div>' +
-    '<div class="tuck-choice-actions"><button type="button" class="primary" data-action="choose"' +
+    '<h2>Choose tuck targets</h2><div class="tuck-choice-actions"><p>' + safe(p.prompt) + '</p><button type="button" class="primary" data-action="choose"' +
     (selected.size < p.min || selected.size > p.max || busy ? ' disabled' : '') + '>Confirm choice</button>' +
     (p.max > 1 || sweepAllowed ? button("Tuck all eligible", "tuckAll", busy || !(allAllowed || sweepAllowed) ? 'disabled title="Choose up to ' + p.max + ' targets"' : "") : "") +
-    '</div></section>';
+    '</div><div class="tuck-targets">' + targets + '</div></section>';
 }
 function decision() {
   const content = decisionContent();
@@ -552,13 +551,13 @@ function decisionContent() {
 
 function renderHand() {
   const layout = 'style="--hand-peeks:' + Math.max(0, game.hand.length - 1) + ';--hand-count:' + game.hand.length + '"';
-  return '<section class="hand-panel" aria-label="Cards in hand"><div class="hand' + (handExpanded ? " expanded" : "") +
-    (game.hand.length === 1 ? ' one-card' : '') + '" ' + layout + '>' + game.hand.map((id) => {
+  return '<section class="hand-panel" aria-label="Cards in hand"><div class="hand' + (game.faction === 'Bacteria' ? ' bacteria-hand' : '') + (handExpanded ? " expanded" : "") +
+    (game.hand.length === 1 ? ' one-card' : '') + '" ' + layout + '>' + game.hand.map((id, index) => {
       const card = cardOf(id), paying = payment.has(id), active = picked === id;
       const canPay = paymentMode && !active;
       const label = card.name + (game.actionRules ? copyLabel(id) : "") +
         (canPay ? (paying ? ", selected for payment" : ", select for payment") : ", view card");
-      return '<article class="hand-card ' + card.faction.toLowerCase() + (active ? " selected" : "") + (paying ? " payment" : "") + '"' +
+      return '<article class="hand-card ' + card.faction.toLowerCase() + (active ? " selected" : "") + (paying ? " payment" : "") + '" style="--hand-layer:' + (index + 1) + '"' +
         (!paymentMode && game.legal[id] && !busy ? ' draggable="true" data-drag-card="' + safe(id) + '"' : "") + '>' +
         '<button type="button" class="hand-peek" data-action="' + (canPay ? "payHand" : "previewHand") +
         '" data-id="' + safe(id) + '" aria-label="' + safe(label) + '" title="' + safe(label) + '"' +
@@ -724,6 +723,8 @@ function render() {
     }).join("") + '</div>' : '<p class="meta">Objectives are chosen when both seats are filled.</p>') + '</div>';
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const choosingTuck = game.pending?.kind === "attack";
+  const tuckKey = choosingTuck ? [game.faction, game.turnNumber, game.pending.kind, ...game.pending.choices].join(',') : null;
+  if (choosingTuck && tuckKey !== previousChoice) handExpanded = false;
   const currentDecision = decision();
   if (choosingTuck) { handPreview = null; inspect = null; objectivePreview = null; }
   const previousBoard = app.querySelector(".board-focus");

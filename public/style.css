@@ -693,3 +693,26 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 .match-screen .board-content:has(> .decision-panel[open]) {display:grid;grid-template-rows:minmax(2rem,45%) auto minmax(0,1fr);overflow:hidden}
 .decision-panel > summary {background:linear-gradient(100deg,var(--green),#163c48);color:#fff;border-bottom:1px solid var(--line);font-size:.8rem}
 .decision-panel:not([open]) {border-radius:.2rem .2rem .6rem .6rem}
+
+/* Tuck actions remain outside the scrolling card strip. */
+.match-screen .decision-content > .tuck-choice {display:grid;grid-template-columns:clamp(6.5rem,20vw,9rem) minmax(0,1fr);grid-template-rows:minmax(0,1fr);overflow:hidden;padding:.25rem;gap:.4rem}
+.tuck-choice > .tuck-choice-actions {grid-column:1;grid-row:1;display:flex;flex-direction:column;flex-wrap:nowrap;justify-content:center;min-height:0;gap:.3rem;overflow:auto}
+.tuck-choice-actions > p {font-size:.7rem;line-height:1.15;margin:0}
+.tuck-choice-actions > button {flex:none;min-width:0;width:100%;min-height:2.5rem;padding:.3rem;font-size:.78rem}
+.tuck-choice > .tuck-targets {grid-column:2;grid-row:1;height:100%;align-items:stretch;overflow-x:auto;overflow-y:hidden}
+.tuck-target {flex-basis:clamp(4rem,18vw,10rem);height:100%;grid-template-rows:minmax(0,1fr) auto}
+.tuck-target:has(small) {grid-template-rows:minmax(0,1fr) auto auto}
+.tuck-target-card {overflow:hidden}
+.tuck-target .choice-option {min-height:1.8rem;padding:.15rem;font-size:.7rem}
+.tuck-target.picked .tuck-target-card {border-color:#70e8d0}
+.tuck-target.picked .choice-option {background:var(--green);color:white}
+.match-screen .board-content:has(.tuck-choice) {grid-template-rows:minmax(7rem,65%) auto minmax(0,1fr)}
+.match-screen .board-content:has(> .decision-panel:not([open])) {grid-template-rows:auto auto minmax(0,1fr)}
+.hand-dock .bacteria-hand {isolation:isolate}
+.hand-dock .bacteria-hand > .hand-card {z-index:var(--hand-layer)}
+.decision-panel[open] {display:block;position:relative}
+.decision-panel > summary {height:2rem;min-height:2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.decision-panel[open] > .decision-content {position:absolute;inset:2rem 0 0;height:auto;overflow:auto}
+@media (max-height:420px) {
+  .tuck-choice-actions > p {display:none}
+}
