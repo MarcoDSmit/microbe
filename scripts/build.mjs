@@ -22,14 +22,22 @@ files["/local-rules.js"] = "const data = " + data + ";\n" + game.replace(/^impor
 const { cards: libraryCards, sites: librarySites, goals: libraryGoals } = JSON.parse(data);
 files["/library-data.js"] = "export default " + JSON.stringify({ cards: libraryCards, sites: librarySites, goals: libraryGoals }) + ";\n";
 const mobile = process.argv.includes("--mobile");
-files["/mobile-catalog.js"] = "export default " + (mobile ? data : "null") + ";\n";
-const staticDirectory = mobile ? "dist/mobile" : process.argv.includes("--netlify") ? "dist/netlify-public" : null;
+const pages = process.argv.includes("--pages");
+const basePath = process.env.PAGES_BASE_PATH ?? "/microbe/";
+if (pages && !/^\/(?:[\w-]+\/)*$/.test(basePath)) throw new Error("PAGES_BASE_PATH must be an absolute directory path ending in /");
+files["/mobile-catalog.js"] = "export default " + (mobile || pages ? data : "null") + ";\n";
+files["/build-mode.js"] = 'export default ' + JSON.stringify(mobile ? 'mobile' : pages ? 'pages' : 'web') + ';\n';
+const staticDirectory = pages ? "dist/pages" : mobile ? "dist/mobile" : process.argv.includes("--netlify") ? "dist/netlify-public" : null;
 if (staticDirectory) {
   for (const [path, content] of Object.entries({...files, ...binary})) {
     const destination = join(staticDirectory, path.slice(1));
     await mkdir(dirname(destination), { recursive: true });
-    await writeFile(destination, content);
+    const output = pages && typeof content === 'string' ? content
+      .replace(/(["'`(])\/(?=[A-Za-z0-9_.-]+[\/.?#]|#)/g, '$1' + basePath)
+      .replace(/"\/"/g, JSON.stringify(basePath)) : content;
+    await writeFile(destination, output);
   }
+  if (pages) await writeFile(join(staticDirectory, '.nojekyll'), '');
 } else {
   await mkdir("dist/server", { recursive: true });
   await mkdir("dist/.openai", { recursive: true });

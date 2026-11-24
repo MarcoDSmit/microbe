@@ -88,6 +88,12 @@ node server.mjs
 
 The test command is optional. Open `http://127.0.0.1:4178` once the server starts and leave its terminal open while playing. For another device on your own network, set `HOST=0.0.0.0` when starting it and use your computer's LAN address. To use a standalone instance across the internet, run it on an HTTPS web host you control. The Sites build uses D1 for room storage.
 
+## GitHub Pages — solo web game
+
+The Pages build bundles the card database, rules, bots, artwork, tutorial and library. Solo (Normal and Hard) and Pass & Play run in the browser without a backend. Online rooms are hidden in this build. Saved matches stay in this browser's local storage and do not transfer from the old Netlify origin.
+
+Run `npm run build:pages` to generate `dist/pages` for `/microbe/`. Set `PAGES_BASE_PATH` to another absolute directory ending in `/` for a different repository or a custom domain. `.github/workflows/pages.yml` builds and deploys each push to `main`; repository Settings → Pages must use GitHub Actions as its source. Hosting is independent of Netlify. This does not add offline caching or cancel a Netlify account.
+
 ## Mobile app preview
 
 The Capacitor package bundles the current board, cards, rules, tutorial, Library, Solo (Normal and Hard), and Pass & Play. Those modes load their card data and artwork locally and save the current match on the device. Online rooms remain available on the hosted web game.
