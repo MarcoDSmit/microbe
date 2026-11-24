@@ -12,7 +12,11 @@ import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
 const utility = document.querySelector("#utility-staging .utility");
+const browserHandKey = "microbe-wars.browser.hand-expanded";
 let handExpanded = buildMode === "mobile";
+if (buildMode !== "mobile") {
+  try { handExpanded = localStorage.getItem(browserHandKey) === "true"; } catch {}
+}
 const referenceMenu = utility.querySelector(".reference-menu");
 const referenceLinks = referenceMenu.querySelector(".panel");
 const settingsMenu = utility.querySelector(".settings");
@@ -671,7 +675,7 @@ function render() {
     return;
   }
   if (!game) {
-    handExpanded = buildMode === "mobile";
+    if (buildMode === "mobile") handExpanded = true;
     app.innerHTML = lobby();
     mountUtility(app.querySelector(".utility-slot"));
     return;
@@ -726,7 +730,7 @@ function render() {
   const previousChoice = app.querySelector("[data-choice-key]")?.dataset.choiceKey;
   const choosingTuck = game.pending?.kind === "attack";
   const tuckKey = choosingTuck ? [game.faction, game.turnNumber, game.pending.kind, ...game.pending.choices].join(',') : null;
-  if (choosingTuck && tuckKey !== previousChoice) handExpanded = false;
+  if (buildMode === "mobile" && choosingTuck && tuckKey !== previousChoice) handExpanded = false;
   const currentDecision = decision();
   if (choosingTuck) { handPreview = null; inspect = null; objectivePreview = null; }
   const previousBoard = app.querySelector(".board-focus");
@@ -1090,6 +1094,9 @@ app.addEventListener("click", async (event) => {
   if (action === "place") return placeCard(site, slot);
   if (action === "toggleHand") {
     handExpanded = !handExpanded;
+    if (buildMode !== "mobile") {
+      try { localStorage.setItem(browserHandKey, String(handExpanded)); } catch {}
+    }
     render();
     app.querySelector('[data-action="toggleHand"]')?.focus({preventScroll:true});
     return;

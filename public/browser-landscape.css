@@ -34,20 +34,17 @@
   }
   .web-build .hand-and-controls {grid-template-columns:minmax(0,1fr)}
   .web-build .turn-controls {grid-template-columns:repeat(2,minmax(0,1fr))}
-  .web-build .hand-dock .hand {
-    --card-width:8rem;
-    height:auto;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:var(--card-width);
-    gap:.45rem;overflow-x:auto;overflow-y:hidden;
+  .web-build .hand-dock .hand,.web-build .hand-dock .hand.expanded {
+    --card-width:6rem;
+    height:calc(var(--card-width) * 1.4);
+    grid-template-columns:repeat(var(--hand-peeks),minmax(0,var(--card-width))) var(--card-width);
+    gap:0;overflow:hidden;isolation:isolate;
   }
-  .web-build .hand-dock .hand.expanded {
-    grid-template-columns:repeat(auto-fill,var(--card-width));grid-auto-flow:row;grid-auto-columns:auto;
-  }
-  .web-build .hand-dock .hand-card {height:auto;align-self:start}
-  .web-build .hand-peek {height:auto;display:grid}
+  .web-build .hand-dock .hand.expanded {--card-width:8rem}
+  .web-build .hand-dock .hand-card {z-index:var(--hand-layer)}
   .web-build .hand-dock .hand-peek .card-art {
-    position:static;width:100%;height:auto;aspect-ratio:5 / 7;object-fit:contain;
+    width:var(--card-width);height:auto;aspect-ratio:5 / 7;object-fit:contain;
   }
-  .web-build .hand-dock .hand-caption {position:static;max-width:100%;margin-top:.2rem}
 }
 
 @media (orientation:landscape) and (min-width:96rem) {
