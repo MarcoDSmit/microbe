@@ -52,6 +52,7 @@ const passKey = "microbe-wars.pass-play";
 const modeKey = "microbe-wars.mobile-mode";
 const localSaves = mobileCatalog ? localStorage : sessionStorage;
 if (mobileCatalog) document.documentElement.classList.add("mobile-build");
+else document.documentElement.classList.add("web-build");
 const soloKey = "microbe-wars.solo";
 const objectiveOffersKey = "microbe-wars.previous-objective-offers";
 function previousObjectiveOffers() {
