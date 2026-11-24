@@ -27,6 +27,28 @@ const basePath = process.env.PAGES_BASE_PATH ?? "/microbe/";
 if (pages && !/^\/(?:[\w-]+\/)*$/.test(basePath)) throw new Error("PAGES_BASE_PATH must be an absolute directory path ending in /");
 files["/mobile-catalog.js"] = "export default " + (mobile || pages ? data : "null") + ";\n";
 files["/build-mode.js"] = 'export default ' + JSON.stringify(mobile ? 'mobile' : pages ? 'pages' : 'web') + ';\n';
+if (pages) {
+  files["/style.css"] += `
+/* GitHub Pages playing field and landing background. */
+.lunar-lobby {
+  background-image:url("/board-art/starfield.webp");
+}
+.board.board-focus {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-rows:repeat(2,auto);
+  height:auto;
+  overflow:visible;
+  scroll-snap-type:none;
+  gap:.65rem;
+}
+.board.board-focus > .node {
+  min-height:0;
+  height:auto;
+  margin:0;
+}
+`;
+}
 const staticDirectory = pages ? "dist/pages" : mobile ? "dist/mobile" : process.argv.includes("--netlify") ? "dist/netlify-public" : null;
 if (staticDirectory) {
   for (const [path, content] of Object.entries({...files, ...binary})) {
