@@ -1,0 +1,55 @@
+/* Hosted landscape uses document scrolling and keeps full 5:7 cards. */
+@media (orientation:landscape) {
+  .web-build body:has(.match-screen),.web-build #app:has(.match-screen) {
+    height:auto;min-height:100dvh;overflow:visible;
+  }
+  .web-build .match-screen {width:min(100%,100rem);height:auto;padding:.55rem;grid-template-rows:auto}
+  .web-build .match-screen .layout {display:block;height:auto}
+  .web-build .match-screen .tabletop {
+    height:auto;grid-template-columns:minmax(0,1.65fr) minmax(0,1fr);
+    grid-template-rows:auto;align-items:start;gap:.7rem;
+  }
+  .web-build .match-screen .board-content,
+  .web-build .match-screen .board-content:has(> .decision-panel) {
+    grid-template-rows:auto;min-width:0;overflow:visible;
+  }
+  .web-build .match-screen .decision-panel[open] {height:auto}
+  .web-build .match-screen .decision-panel[open] > .decision-content {position:static;max-height:none}
+  .web-build .match-screen .decision-content > .tuck-choice {min-height:14rem;height:auto}
+  .web-build .match-screen .tuck-target {height:auto}
+  .web-build .match-screen .tuck-target-card .card-art {height:auto;aspect-ratio:5 / 7}
+  .web-build .match-screen .board {
+    display:grid;grid-template-columns:minmax(0,1fr);height:auto;overflow:visible;
+    scroll-snap-type:none;container-type:normal;
+  }
+  .web-build .match-screen .board .node {display:block;min-height:0;height:auto;margin:0;scroll-margin-top:.5rem}
+  .web-build .match-screen .clinical-site {width:min(100%,34rem);height:auto;aspect-ratio:3 / 1}
+  .web-build .match-screen .portrait-slots {
+    width:min(100%,34rem);height:auto;grid-template-columns:repeat(var(--site-columns),minmax(0,1fr));
+  }
+  .web-build .match-screen .portrait-slots .slot {height:auto;min-height:0;aspect-ratio:5 / 7}
+  .web-build .match-screen .portrait-slots .board-card-art {width:100%;height:100%;max-height:none;object-fit:contain}
+  .web-build .match-screen .hand-dock {
+    position:sticky;top:.4rem;align-self:start;max-height:calc(100dvh - .8rem);overflow-y:auto;
+  }
+  .web-build .hand-and-controls {grid-template-columns:minmax(0,1fr)}
+  .web-build .turn-controls {grid-template-columns:repeat(2,minmax(0,1fr))}
+  .web-build .hand-dock .hand {
+    --card-width:8rem;
+    height:auto;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:var(--card-width);
+    gap:.45rem;overflow-x:auto;overflow-y:hidden;
+  }
+  .web-build .hand-dock .hand.expanded {
+    grid-template-columns:repeat(auto-fill,var(--card-width));grid-auto-flow:row;grid-auto-columns:auto;
+  }
+  .web-build .hand-dock .hand-card {height:auto;align-self:start}
+  .web-build .hand-peek {height:auto;display:grid}
+  .web-build .hand-dock .hand-peek .card-art {
+    position:static;width:100%;height:auto;aspect-ratio:5 / 7;object-fit:contain;
+  }
+  .web-build .hand-dock .hand-caption {position:static;max-width:100%;margin-top:.2rem}
+}
+
+@media (orientation:landscape) and (min-width:96rem) {
+  .web-build .match-screen .board {grid-template-columns:repeat(2,minmax(0,1fr))}
+}

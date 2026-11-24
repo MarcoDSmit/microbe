@@ -22,6 +22,11 @@ files["/local-rules.js"] = "const data = " + data + ";\n" + game.replace(/^impor
 const { cards: libraryCards, sites: librarySites, goals: libraryGoals } = JSON.parse(data);
 files["/library-data.js"] = "export default " + JSON.stringify({ cards: libraryCards, sites: librarySites, goals: libraryGoals }) + ";\n";
 const mobile = process.argv.includes("--mobile");
+if (mobile) delete files["/browser-landscape.css"];
+else files["/index.html"] = files["/index.html"].replace(
+  '<link rel="stylesheet" href="/style.css">',
+  '<link rel="stylesheet" href="/style.css">\n  <link rel="stylesheet" href="/browser-landscape.css">',
+);
 const pages = process.argv.includes("--pages");
 const basePath = process.env.PAGES_BASE_PATH ?? "/microbe/";
 if (pages && !/^\/(?:[\w-]+\/)*$/.test(basePath)) throw new Error("PAGES_BASE_PATH must be an absolute directory path ending in /");

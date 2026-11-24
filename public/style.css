@@ -716,22 +716,3 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 @media (max-height:420px) {
   .tuck-choice-actions > p {display:none}
 }
-
-/* The hosted game uses the same cards and decisions in a viewport-sized landscape table. */
-@media (orientation:landscape) and (min-height:521px) {
-  .web-build body:has(.match-screen) {height:100dvh;overflow:hidden}
-  .web-build #app:has(.match-screen) {height:100%;min-height:0}
-  .web-build .match-screen {width:min(100%,100rem);height:100%;min-height:0;padding:.5rem .75rem;grid-template-rows:auto minmax(0,1fr);gap:.4rem}
-  .web-build .compact-match {grid-template-rows:minmax(0,1fr)}
-  .web-build .match-screen .layout {height:100%;min-height:0;display:block}
-  .web-build .match-screen .tabletop {height:100%;min-height:0;grid-template-rows:minmax(0,1fr) auto;gap:.35rem}
-  .web-build .board-content {min-height:0;grid-template-rows:auto minmax(0,1fr)}
-  .web-build .board-focus {height:100%;min-height:0;container-type:size}
-  .web-build .board-focus .node {height:100%;min-height:100%;display:grid;grid-template-rows:minmax(4rem,30%) minmax(0,1fr);gap:.3rem;padding:.4rem}
-  .web-build .board-focus .node:has(>.tuck-space) {grid-template-rows:minmax(4rem,30%) minmax(0,1fr) auto}
-  .web-build .board-focus .clinical-site {height:100%;width:min(100%,36rem);margin:0 auto;--banner-height:100%}
-  .web-build .board-focus .portrait-slots {height:100%;width:min(100%,180cqh,54rem)}
-  .web-build .board-focus .portrait-slots .slot {height:100%;aspect-ratio:auto}
-  .web-build .hand-dock .hand.expanded {--peek-height:32dvh}
-  .web-build .match-screen .layout>.aside {position:absolute;z-index:4;inset:.25rem;max-height:100%;overflow:auto}
-}

@@ -12,7 +12,7 @@ import { updateGameAudio } from "/game-audio.js";
 
 const app = document.querySelector("#app");
 const utility = document.querySelector("#utility-staging .utility");
-let handExpanded = true;
+let handExpanded = buildMode === "mobile";
 const referenceMenu = utility.querySelector(".reference-menu");
 const referenceLinks = referenceMenu.querySelector(".panel");
 const settingsMenu = utility.querySelector(".settings");
@@ -671,7 +671,7 @@ function render() {
     return;
   }
   if (!game) {
-    handExpanded = true;
+    handExpanded = buildMode === "mobile";
     app.innerHTML = lobby();
     mountUtility(app.querySelector(".utility-slot"));
     return;
@@ -974,7 +974,12 @@ app.addEventListener("click", async (event) => {
     focusedSite = id;
     const board = app.querySelector(".board-focus");
     const target = board?.querySelector('[data-board-site="' + CSS.escape(id) + '"]');
-    if (target) board.scrollTo({top:target.offsetTop,behavior:matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+    if (target) {
+      const behavior = matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      if (buildMode !== "mobile" && matchMedia("(orientation: landscape)").matches) {
+        target.scrollIntoView({block:"start",behavior});
+      } else board.scrollTo({top:target.offsetTop,behavior});
+    }
     return;
   }
   if (action === "exportReplay") {
