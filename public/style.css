@@ -716,3 +716,17 @@ body:has(.lunar-lobby) .masthead {justify-content:center}
 @media (max-height:420px) {
   .tuck-choice-actions > p {display:none}
 }
+.match-result {display:grid;gap:.8rem}
+.score-table-wrap {max-width:100%;overflow-x:auto}
+.score-table {width:100%;border-collapse:collapse;text-align:left}
+.score-table caption {text-align:left;font-weight:700;padding-bottom:.5rem}
+.score-table th,.score-table td {padding:.6rem;border-bottom:1px solid var(--line);vertical-align:top}
+.score-table th:first-child {width:72%}
+.score-table th small {display:block;font-weight:400;line-height:1.4;margin-top:.2rem}
+.score-table td {font-variant-numeric:tabular-nums;font-weight:700}
+.score-total {font-size:1.15rem}
+.match-feedback {border-top:1px solid var(--line);padding-top:.7rem}
+.match-feedback summary {font-weight:700;cursor:pointer}
+.match-feedback section {margin-top:1rem}
+.match-feedback li {line-height:1.5;margin:.5rem 0}
+.bonus-clarification {padding:.6rem;background:#102430;color:#edf7ff;border:1px solid #527b86;border-radius:.4rem;max-width:34rem;line-height:1.4}

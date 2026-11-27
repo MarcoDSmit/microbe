@@ -4,6 +4,7 @@ import { chooseBotMove } from "/solo-bot.js";
 import { chooseHardMove } from "/trained-bot.js";
 import mobileCatalog from "/mobile-catalog.js";
 import buildMode from "/build-mode.js";
+import { matchReview, scoreCategories } from "/match-review.js";
 import { createFirstGame, firstGameAllows, firstGameSteps } from "/first-game.js";
 import { cardArtUrl, matchGlyphs, tuckScoreLabel } from "/card-display.js";
 import { printedCardCopy } from "/printed-card-copy.js";
@@ -365,6 +366,7 @@ function cardDetail() {
   }
   return '<div class="detail"><h2 class="sr-only">' + safe(card.name) + '</h2>' +
     zoomCard(instance,"closeCardPreview") +
+    (card.id === 'B31' ? '<p class="bonus-clarification">Bonus play: any other Bacteria card from your hand, not just Staphylococcus. Pay its usual cost; it spends no action.</p>' : '') +
     (onBoard?.antibioticTuck ? '<p><b>Antibiotic tuck</b> · ' +
       (onBoard.antibioticTuck.match === "OPTIMAL" ? "Optimal" : "Active") +
       (onBoard.antibioticTuck.remote ? " · from another site" : " · local") + '</p>' : "") +
@@ -534,7 +536,7 @@ function decisionContent() {
     const previous = app.querySelector("details.bonus-choice");
     return '<details class="bonus-choice" data-bonus-key="' + safe(key) + '"' +
       (previous?.dataset.bonusKey === key && previous.open ? ' open' : '') +
-      '><summary>Bonus play available</summary><div class="bonus-content"><p>Select a legal card from your hand, or skip this bonus.</p>' +
+      '><summary>Bonus play available</summary><div class="bonus-content"><p>Select a legal card from your hand; it does not have to be the same species. Pay its usual cost, or skip.</p>' +
       '<button type="button" class="secondary" data-action="skipBonus"' + (busy ? ' disabled' : '') + '>Skip bonus</button></div></details>';
   }
   if (p.kind === "refuge") {
@@ -611,19 +613,23 @@ function renderHandPreview() {
   if (!game.hand.includes(handPreview)) handPreview = null;
   if (!handPreview) return "";
   return '<dialog class="hand-preview image-preview" aria-label="Enlarged card">' +
-    zoomCard(handPreview,"closeHandPreview") + '</dialog>';
+    zoomCard(handPreview,"closeHandPreview") +
+    (cardOf(handPreview).id === 'B31' ? '<p class="bonus-clarification">Bonus play: any other Bacteria card from your hand, not just Staphylococcus. Pay its usual cost; it spends no action.</p>' : '') + '</dialog>';
 }
 
 function renderScore() {
   if (!game.scores) return "";
   const h = game.scores.Host.total, b = game.scores.Bacteria.total;
   const headline = b === h ? "The match is tied." : (b > h ? "Bacteria" : "Host") + " wins.";
-  return '<section class="panel"><h2>' + headline + '</h2><p class="meta">' + safe(game.reason) +
-    '</p><div class="score">' + ["Bacteria","Host"].map((f) => {
-      const s=game.scores[f];
-      return '<div><b>' + f + ' ' + s.total + '</b><p class="meta">Base ' + s.base + ' · synergy ' + s.synergy +
-        ' · tucked ' + s.tuck + ' · territory ' + s.territory + ' · objectives ' + s.objective + '</p></div>';
-    }).join("") + '</div>' + (game.series ? '<p class="series-score"><b>Series wins</b> · Bacteria ' + game.series.Bacteria +
+  const review = matchReview(localMatch ?? game, data);
+  return '<section class="panel match-result"><h2>' + headline + '</h2><p class="meta">' + safe(game.reason) +
+    '</p><p>VP means victory points. Your total is the sum of these five categories.</p>' +
+    '<div class="score-table-wrap"><table class="score-table"><caption>Final score breakdown</caption><thead><tr><th scope="col">What scores</th><th scope="col">Bacteria</th><th scope="col">Host</th></tr></thead><tbody>' +
+    scoreCategories.map(([key,label,meaning]) => '<tr><th scope="row">' + label + '<small>' + safe(meaning) + '</small></th><td>' + game.scores.Bacteria[key] + '</td><td>' + game.scores.Host[key] + '</td></tr>').join('') +
+    '<tr class="score-total"><th scope="row">Total VP</th><td>' + b + '</td><td>' + h + '</td></tr></tbody></table></div>' +
+    (review ? '<details class="match-feedback" open><summary>Match feedback</summary><p class="meta">Rules-based observations from recorded placements and the final board. These are suggestions, not a judgement of the best possible move; captures and limited space can change what was achievable.</p>' +
+      ['Bacteria','Host'].map(f => '<section><h3>' + f + '</h3><ul>' + review[f].comments.map(comment => '<li>' + safe(comment) + '</li>').join('') + '</ul></section>').join('') + '</details>' : '') +
+    (game.series ? '<p class="series-score"><b>Series wins</b> · Bacteria ' + game.series.Bacteria +
       ' · Host ' + game.series.Host + ' · Ties ' + game.series.ties + '</p>' : '') +
     '<p class="meta">Replay includes both players’ cards and objectives.</p>' +
     button("Download match replay","exportReplay",busy ? "disabled" : "") +
@@ -668,8 +674,8 @@ function render() {
       button("Leave match","leave","","plain") + (notice ? '<p class="notice">' + safe(notice) + '</p>' : "") + '</section>';
     return;
   }
-  if (localMatch && game?.status === "finished") {
-    app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? soloLabel() : "Pass &amp; Play") +
+  if (game?.status === "finished") {
+    app.innerHTML = '<article class="game"><span class="eyebrow">' + (soloFaction ? soloLabel() : localMatch ? "Pass &amp; Play" : "Online match") +
       '</span>' + renderScore() + err() +
       '<div>' + button("Back to lobby","leave") + '</div></article>';
     return;

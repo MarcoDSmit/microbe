@@ -7,6 +7,7 @@ import { nextPlayer, passPlayView } from "../public/pass-play.js";
 import { tuckScoreLabel } from "../public/card-display.js";
 import { chooseBotMove } from "../public/solo-bot.js";
 import { chooseHardMove } from "../public/trained-bot.js";
+import { matchReview, scoreCategories } from "../public/match-review.js";
 
 const piece = (id) => ({id,tucked:[],guardUsed:false,refugeUsed:0});
 const random = () => 0.19;
@@ -150,6 +151,32 @@ function fixture(siteId, turn, board, hand) {
   s.players[turn].hand = hand;
   return s;
 }
+
+// Host synergy counts each Immune card's allies, not antibiotics or site tags.
+const immunePair = fixture('N01','Host',['H01','H04','H19'],[]);
+assert.equal(score(immunePair,'Host').synergy,4);
+immunePair.board[0].slots[3]=piece('H07');
+assert.equal(score(immunePair,'Host').synergy,12);
+immunePair.status='finished';
+immunePair.scores={Host:score(immunePair,'Host'),Bacteria:score(immunePair,'Bacteria')};
+const pairReview=matchReview(immunePair,data);
+assert.match(pairReview.Host.comments[0],/0 of your 3/);
+assert.match(pairReview.Bacteria.comments[0],/final-board snapshot/);
+assert.equal(matchReview({...immunePair,status:'playing'},data),null);
+assert.deepEqual(scoreCategories.map(([key])=>key),['base','synergy','tuck','territory','objective']);
+const placementReview=structuredClone(immunePair);
+placementReview.playedPoints=[{id:'B04',faction:'Bacteria',site:'N03'},{id:'B05',faction:'Bacteria',site:'N01'}];
+assert.match(matchReview(placementReview,data).Bacteria.comments[0],/1 of 2 recorded/);
+const noMatchingSite=structuredClone(placementReview);
+noMatchingSite.board=noMatchingSite.board.filter(site=>site.id!=='N03');
+assert.match(matchReview(noMatchingSite,data).Bacteria.comments[0],/final-board snapshot/);
+const aureusBonus=fixture('N01','Bacteria',[],['B31','B04','B25','B40']);
+act(aureusBonus,'Bacteria',{type:'play',card:'B31',site:'N01',slot:0,pay:['B40']});
+assert.equal(aureusBonus.pending.kind,'bonus');
+assert.ok(view(aureusBonus,'Bacteria').legal.B04);
+act(aureusBonus,'Bacteria',{type:'play',card:'B04',site:'N03',slot:0,pay:[]});
+assert.equal(aureusBonus.board.find(site=>site.id==='N03').slots[0].id,'B04');
+assert.equal(aureusBonus.slots,0); // The first play spent the only action; the bonus did not.
 
 { // Regression coverage for the approved 103-card catalog.
 assert.equal(Object.keys(data.cards).length,103);
