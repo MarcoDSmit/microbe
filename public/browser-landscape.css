@@ -1,3 +1,12 @@
+/* Keep the objective panel in view even when the board extends below the viewport. */
+.web-build .match-screen .layout > .aside:has(.match-objectives) {
+  position:fixed;z-index:5;inset:.75rem .75rem auto auto;
+  width:min(36rem,calc(100vw - 1.5rem));max-height:calc(100dvh - 1.5rem);
+  overflow:auto;overscroll-behavior:contain;
+  padding:.5rem;background:var(--card);border:1px solid var(--line);border-radius:.6rem;
+}
+.web-build .match-screen .layout > .aside:has(.match-objectives) > button {justify-self:end}
+
 /* Hosted landscape uses document scrolling and keeps full 5:7 cards. */
 @media (orientation:landscape) {
   .web-build body:has(.match-screen),.web-build #app:has(.match-screen) {
